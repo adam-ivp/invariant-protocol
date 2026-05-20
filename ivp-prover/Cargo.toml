@@ -1,0 +1,10 @@
+[workspace]
+members = ["lib", "program", "script"]
+resolver = "2"
+
+[workspace.dependencies]
+alloy-sol-types = { version = "0.8" }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1" }
+sha3 = { version = "0.10" }
+hex = { version = "0.4" }
