@@ -8,7 +8,7 @@ IVP fixes that. Protocols register their invariants on-chain. A prover network v
 
 ## Stack
 
-'''
+```
 contracts/
   InvariantRegistry.sol
   ProverRegistry.sol
@@ -20,7 +20,7 @@ ivp-prover/
   script/    prover node
 invariant-library/
   lending / dex / stablecoin / bridge / governance
-'''
+```
 
 ---
 
