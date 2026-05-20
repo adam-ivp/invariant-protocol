@@ -7,17 +7,21 @@ IVP fixes that. Protocols register their invariants on-chain. A prover network v
 ---
 
 ## Stack
+
+```
 contracts/
-InvariantRegistry.sol
-ProverRegistry.sol
-CoverageVault.sol
-IVPToken.sol
+  InvariantRegistry.sol
+  ProverRegistry.sol
+  CoverageVault.sol
+  IVPToken.sol
 ivp-prover/
-lib/       core types
-program/   SP1 zkVM — RISC-V ZK circuit
-script/    prover node
+  lib/       core types
+  program/   SP1 zkVM — RISC-V ZK circuit
+  script/    prover node
 invariant-library/
-lending / dex / stablecoin / bridge / governance
+  lending / dex / stablecoin / bridge / governance
+```
+
 ---
 
 ## Run it
@@ -28,12 +32,17 @@ source ~/.bashrc && sp1up
 cd ivp-prover/program && cargo prove build
 cd .. && cargo run --release --bin ivp
 ```
+
+```
 === IVP EXECUTION RESULT ===
 Epoch:    1
 Violated: true
+
 *** INVARIANT VIOLATION DETECTED ***
 Invariant: PaidDebtGhostShareGuard
 Total instructions: 75831
+```
+
 ---
 
 ## Status
