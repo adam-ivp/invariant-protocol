@@ -1,3 +1,5 @@
-target/
+invariant-library/
+ivp-prover/
+node_modules/
 .env
-*.bin
+*.key
