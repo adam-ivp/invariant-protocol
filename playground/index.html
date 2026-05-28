@@ -1,0 +1,1651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ISL Playground — Invariant Protocol</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#06080B;--panel:#0A0D12;--surface:#0F1318;--border:#1A2030;--border2:#243040;
+  --text:#C8D8E8;--dim:#4A5A70;--muted:#1E2A38;--accent:#00D4FF;--accent2:#0088AA;
+  --green:#00FF88;--red:#FF3A50;--yellow:#FFB800;--purple:#A855F7;--orange:#FF6B35;
+  --mono:'JetBrains Mono',monospace;--sans:'Syne',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);font-size:13px;height:100vh;overflow:hidden;display:flex;flex-direction:column}
+.topbar{height:48px;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:14px;flex-shrink:0}
+.logo{font-family:var(--sans);font-size:14px;font-weight:800;color:#fff;letter-spacing:-0.02em;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.logo-tag{font-family:var(--mono);font-size:9px;color:var(--accent);letter-spacing:.14em;border:1px solid var(--accent2);padding:2px 6px}
+.tpl-btns{display:flex;gap:4px}
+.tpl-btn{font-family:var(--mono);font-size:10px;padding:4px 10px;background:var(--surface);border:1px solid var(--border);color:var(--dim);cursor:pointer;transition:all .15s}
+.tpl-btn:hover,.tpl-btn.active{color:var(--accent);border-color:var(--accent2);background:rgba(0,212,255,.05)}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.status-pill{font-size:10px;padding:3px 10px;display:flex;align-items:center;gap:5px;letter-spacing:.06em;white-space:nowrap}
+.status-pill.ok{background:rgba(0,255,136,.08);color:var(--green);border:1px solid rgba(0,255,136,.2)}
+.status-pill.err{background:rgba(255,58,80,.08);color:var(--red);border:1px solid rgba(255,58,80,.2)}
+.status-pill.busy{background:rgba(168,85,247,.08);color:var(--purple);border:1px solid rgba(168,85,247,.2)}
+.status-pill.idle{background:rgba(74,90,112,.12);color:var(--dim);border:1px solid var(--border)}
+.status-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.status-dot.pulse{animation:dotPulse 1.2s ease infinite}
+@keyframes dotPulse{0%,100%{opacity:1}50%{opacity:.3}}
+.run-btn{background:var(--accent);color:#000;font-family:var(--mono);font-size:11px;font-weight:600;padding:6px 14px;border:none;cursor:pointer;letter-spacing:.08em;transition:all .15s;white-space:nowrap}
+.run-btn:hover{background:#33DDFF}
+.run-btn:disabled{opacity:.5;cursor:not-allowed}
+.hunt-btn{background:rgba(168,85,247,.12);color:var(--purple);font-family:var(--mono);font-size:11px;font-weight:600;padding:6px 14px;border:1px solid rgba(168,85,247,.3);cursor:pointer;letter-spacing:.06em;transition:all .15s;white-space:nowrap}
+.hunt-btn:hover{background:rgba(168,85,247,.2)}
+.hunt-btn:disabled{opacity:.4;cursor:not-allowed}
+.workspace{display:grid;grid-template-columns:300px 1fr 380px;flex:1;overflow:hidden}
+.exploit-panel{background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.panel-header{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.panel-title{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
+.panel-count{font-size:9px;color:var(--red)}
+.panel-count.gen{color:var(--purple)}
+.exploit-list{overflow-y:auto;flex:1;padding:6px}
+.exploit-list::-webkit-scrollbar{width:3px}
+.exploit-list::-webkit-scrollbar-thumb{background:var(--muted)}
+.exploit-card{border:1px solid var(--border);background:var(--surface);padding:10px 12px;margin-bottom:5px;cursor:pointer;transition:all .15s;position:relative;overflow:hidden;animation:cardIn .35s ease both}
+@keyframes cardIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
+.exploit-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--sev-color,var(--dim))}
+.exploit-card:hover{border-color:var(--border2);background:rgba(255,255,255,.015)}
+.exploit-card.active{border-color:var(--sev-color,var(--accent))}
+.exploit-card.ai-generated::after{content:'AI';position:absolute;top:6px;right:8px;font-size:8px;color:var(--purple);letter-spacing:.1em;border:1px solid rgba(168,85,247,.3);padding:1px 4px;background:rgba(168,85,247,.08)}
+.exploit-card.mocking{border-color:var(--red)}
+.exploit-sev{font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--sev-color,var(--dim));margin-bottom:4px;display:flex;align-items:center;gap:5px}
+.exploit-sev::before{content:'';width:4px;height:4px;border-radius:50%;background:currentColor}
+.exploit-name{font-size:11px;color:var(--text);font-weight:500;margin-bottom:4px;line-height:1.4}
+.exploit-desc{font-size:10px;color:var(--dim);line-height:1.55}
+.exploit-footer{margin-top:8px;padding-top:7px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;font-size:9px;color:var(--dim)}
+.mock-btn{font-size:9px;padding:2px 7px;background:rgba(255,58,80,.08);border:1px solid rgba(255,58,80,.2);color:var(--red);cursor:pointer;letter-spacing:.06em;font-family:var(--mono);transition:all .15s}
+.mock-btn:hover{background:rgba(255,58,80,.18)}
+.mock-btn.active{background:rgba(255,58,80,.2);border-color:rgba(255,58,80,.5)}
+.gen-card{border:1px solid rgba(168,85,247,.2);background:rgba(168,85,247,.03);padding:10px 12px;margin-bottom:5px;animation:genPulse 1.5s ease infinite}
+@keyframes genPulse{0%,100%{border-color:rgba(168,85,247,.2)}50%{border-color:rgba(168,85,247,.5)}}
+.shimmer{height:8px;background:linear-gradient(90deg,var(--muted),rgba(168,85,247,.2),var(--muted));background-size:200% 100%;animation:shim 1.5s ease infinite;border-radius:1px;margin-bottom:6px}
+@keyframes shim{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--muted);text-align:center;padding:20px;gap:10px}
+.empty-icon{font-size:24px;opacity:.5}
+.empty-text{font-size:10px;line-height:1.7;color:var(--dim)}
+.editor-panel{display:flex;flex-direction:column;border-right:1px solid var(--border);overflow:hidden}
+.editor-header{padding:8px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0;background:var(--panel)}
+.file-tab{font-size:11px;color:var(--accent);display:flex;align-items:center;gap:5px;padding:3px 10px;background:var(--surface);border:1px solid var(--border2)}
+.editor-wrap{flex:1;overflow:hidden;position:relative;display:flex}
+.line-numbers{width:44px;background:var(--panel);border-right:1px solid var(--border);padding:14px 0;text-align:right;color:var(--muted);font-size:11px;line-height:1.7;user-select:none;overflow:hidden;flex-shrink:0}
+.line-numbers span{display:block;padding-right:10px}
+.editor-area{flex:1;position:relative;overflow:hidden}
+#isl-editor{width:100%;height:100%;background:transparent;color:transparent;caret-color:var(--accent);font-family:var(--mono);font-size:12px;line-height:1.7;padding:14px 16px;border:none;outline:none;resize:none;position:absolute;top:0;left:0;z-index:2;white-space:pre;overflow:auto}
+#isl-hl{width:100%;height:100%;font-family:var(--mono);font-size:12px;line-height:1.7;padding:14px 16px;position:absolute;top:0;left:0;z-index:1;white-space:pre;overflow:hidden;pointer-events:none}
+.kw{color:#7EC8E3}.kw2{color:var(--purple)}.fn{color:#D4A8FF}.str{color:var(--yellow)}.num{color:var(--orange)}.cmt{color:#2A3A50;font-style:italic}
+.editor-errors{border-top:1px solid var(--border);background:var(--panel);flex-shrink:0;max-height:60px;overflow-y:auto}
+.right-panel{display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+.right-header{padding:8px 14px;border-bottom:1px solid var(--border);background:var(--panel);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.rtabs{display:flex}
+.rtab{font-size:10px;letter-spacing:.06em;padding:4px 12px;color:var(--dim);cursor:pointer;border-bottom:2px solid transparent;background:none;border-top:none;border-left:none;border-right:none;font-family:var(--mono);transition:all .15s}
+.rtab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.rtab.aitab{color:var(--purple)}
+.rtab.aitab.active{color:var(--purple);border-bottom-color:var(--purple)}
+.right-body{flex:1;overflow-y:auto;padding:14px}
+.right-body::-webkit-scrollbar{width:3px}
+.right-body::-webkit-scrollbar-thumb{background:var(--muted)}
+.threat-input-bar{display:flex;gap:6px;margin-bottom:12px}
+.threat-input{flex:1;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:11px;padding:7px 10px;outline:none}
+.threat-input::placeholder{color:var(--dim)}
+.threat-input:focus{border-color:var(--accent2)}
+.analyze-btn{background:var(--purple);color:#fff;font-family:var(--mono);font-size:10px;font-weight:600;padding:7px 14px;border:none;cursor:pointer;letter-spacing:.08em;white-space:nowrap}
+.analyze-btn:hover{background:#C084FC}
+.analyze-btn:disabled{opacity:.4;cursor:not-allowed}
+.opts{display:flex;gap:5px;margin-bottom:12px;flex-wrap:wrap}
+.opt{font-size:9px;padding:3px 8px;background:var(--surface);border:1px solid var(--border);color:var(--dim);cursor:pointer;letter-spacing:.06em;font-family:var(--mono);transition:all .15s}
+.opt:hover,.opt.sel{color:var(--purple);border-color:rgba(168,85,247,.4);background:rgba(168,85,247,.06)}
+.ai-stream{font-size:11px;color:var(--dim);line-height:1.75;background:var(--surface);border:1px solid var(--border);padding:14px 16px;min-height:80px}
+.thinking{display:flex;align-items:center;gap:8px;color:var(--purple);font-size:10px;letter-spacing:.08em}
+.ai-dots span{animation:dots 1.2s ease infinite;opacity:0}
+.ai-dots span:nth-child(1){animation-delay:0s}
+.ai-dots span:nth-child(2){animation-delay:.2s}
+.ai-dots span:nth-child(3){animation-delay:.4s}
+@keyframes dots{0%,100%{opacity:0}50%{opacity:1}}
+.tf{border:1px solid var(--border);background:var(--surface);margin-bottom:7px;overflow:hidden;animation:cardIn .3s ease both}
+.tf-head{display:flex;align-items:center;gap:8px;padding:10px 12px;cursor:pointer}
+.ti{width:18px;height:18px;border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:10px}
+.tc{background:rgba(255,58,80,.12);color:var(--red)}
+.th{background:rgba(255,107,53,.12);color:var(--orange)}
+.tm{background:rgba(255,184,0,.1);color:var(--yellow)}
+.tf-name{font-size:11px;color:var(--text);flex:1;font-weight:500}
+.tf-fut{font-size:8px;color:var(--purple);letter-spacing:.1em;border:1px solid rgba(168,85,247,.25);padding:1px 5px}
+.tf-body{border-top:1px solid var(--border);padding:10px 12px;display:none;font-size:10px;color:var(--dim);line-height:1.7}
+.tf-body.open{display:block}
+.tf-chain{font-size:10px;padding:8px 10px;background:var(--bg);border:1px solid var(--border);color:var(--dim);line-height:1.7;margin:6px 0}
+.inject-btn{font-size:9px;padding:4px 10px;background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.25);color:var(--purple);cursor:pointer;font-family:var(--mono);letter-spacing:.06em;transition:all .15s;display:inline-block;margin-top:8px}
+.inject-btn:hover{background:rgba(168,85,247,.2)}
+.sect-title{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.sect-title::after{content:'';flex:1;height:1px;background:var(--border)}
+.sv{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--surface);border:1px solid var(--border);margin-bottom:3px;transition:border-color .2s}
+.sv.mocked{border-color:rgba(255,184,0,.4);background:rgba(255,184,0,.03)}
+.sv-name{font-size:10px;color:var(--dim);min-width:150px;flex-shrink:0}
+.sv-name span{color:var(--purple)}
+.sv-input{flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:10px;padding:3px 7px;outline:none}
+.sv-input:focus{border-color:var(--accent2)}
+.sv-input.mocked{border-color:var(--yellow);color:var(--yellow)}
+.sv-badge{font-size:8px;padding:1px 5px;letter-spacing:.08em;white-space:nowrap}
+.b-ok{background:rgba(0,255,136,.08);color:var(--green)}
+.b-fail{background:rgba(255,58,80,.1);color:var(--red)}
+.b-mock{background:rgba(255,184,0,.08);color:var(--yellow)}
+.b-dim{color:var(--muted)}
+.va{background:rgba(255,58,80,.05);border:1px solid rgba(255,58,80,.3);padding:12px 14px;margin-bottom:12px;display:flex;gap:10px;align-items:flex-start;animation:alertIn .4s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes alertIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+.va-icon{font-size:14px;color:var(--red);flex-shrink:0}
+.va-title{font-size:11px;color:var(--red);font-weight:600;margin-bottom:3px}
+.va-detail{font-size:10px;color:rgba(255,58,80,.65);line-height:1.6}
+.clean-banner{background:rgba(0,255,136,.04);border:1px solid rgba(0,255,136,.2);padding:10px 14px;display:flex;align-items:center;gap:8px;font-size:10px;color:var(--green);margin-bottom:12px;animation:fadeIn .3s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.cr{border:1px solid var(--border);background:var(--surface);margin-bottom:5px;overflow:hidden;animation:cardIn .25s ease both}
+.cr-head{display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer}
+.ci{width:18px;height:18px;border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:10px}
+.ci-ok{background:rgba(0,255,136,.08);color:var(--green)}
+.ci-fail{background:rgba(255,58,80,.1);color:var(--red)}
+.cr-name{font-size:10px;color:var(--text);flex:1}
+.cr-cyc{font-size:9px;color:var(--dim)}
+.cr-body{border-top:1px solid var(--border);padding:8px 12px;display:none;font-size:10px;color:var(--dim);line-height:1.7}
+.cr-body.open{display:block}
+.epoch-bar{height:2px;background:var(--border);overflow:hidden;margin-bottom:10px}
+.epoch-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--green));transition:width .1s}
+.epoch-info{display:flex;justify-content:space-between;font-size:9px;color:var(--dim);margin-bottom:14px;letter-spacing:.06em}
+.mock-banner{background:rgba(255,184,0,.05);border:1px solid rgba(255,184,0,.2);padding:7px 12px;font-size:10px;color:var(--yellow);display:flex;align-items:center;gap:6px;margin-bottom:10px}
+/* Coverage Map */
+.cov-header{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.cov-header::after{content:'';flex:1;height:1px;background:var(--border)}
+.cov-profile{background:var(--surface);border:1px solid var(--border);padding:10px 12px;margin-bottom:14px;font-size:10px}
+.cov-profile-row{display:flex;gap:10px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.03)}
+.cov-profile-row:last-child{border-bottom:none}
+.cov-profile-key{color:var(--dim);min-width:130px;letter-spacing:.04em;text-transform:uppercase;font-size:9px}
+.cov-profile-val{color:var(--text);flex:1;font-family:var(--mono)}
+.cov-profile-val.ok{color:var(--green)}
+.cov-profile-val.warn{color:var(--yellow)}
+.cov-profile-val.crit{color:var(--red)}
+.cov-graph-item{background:var(--surface);border:1px solid var(--border);padding:10px 12px;margin-bottom:5px;font-size:10px;animation:cardIn .3s ease both;position:relative;border-left:2px solid var(--accent2)}
+.cov-graph-item.gap{border-left-color:var(--red)}
+.cov-graph-name{color:var(--text);font-weight:500;margin-bottom:6px;font-size:11px}
+.cov-graph-line{display:flex;gap:6px;padding:3px 0;color:var(--dim);font-size:9.5px;line-height:1.55}
+.cov-graph-arrow{color:var(--dim);font-family:var(--mono);min-width:22px}
+.cov-graph-relation{color:var(--accent);min-width:80px;letter-spacing:.04em}
+.cov-graph-relation.attacks{color:var(--orange)}
+.cov-graph-relation.depends{color:var(--purple)}
+.cov-graph-target{color:var(--text);font-family:var(--mono)}
+.cov-gap-badge{position:absolute;top:8px;right:10px;font-size:8px;color:var(--red);letter-spacing:.12em;border:1px solid rgba(255,58,80,.3);padding:1px 5px;background:rgba(255,58,80,.06)}
+.cov-empty{color:var(--dim);font-size:11px;text-align:center;padding:30px 20px;line-height:1.7}
+.cov-meta{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:14px}
+.cov-meta-cell{background:var(--surface);border:1px solid var(--border);padding:8px 10px}
+.cov-meta-num{font-size:18px;color:var(--text);font-weight:600;line-height:1;margin-bottom:3px;font-family:var(--mono)}
+.cov-meta-num.warn{color:var(--yellow)}
+.cov-meta-num.crit{color:var(--red)}
+.cov-meta-label{font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);line-height:1.3}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="logo">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2L4 6v12l8 4 8-4V6L12 2z" stroke="#00D4FF" stroke-width="1.5"/><path d="M12 2v18M4 6l8 4 8-4" stroke="#00D4FF" stroke-width="1" opacity=".4"/></svg>
+    ISL Playground <span class="logo-tag">by IVP</span>
+  </div>
+  <div class="tpl-btns">
+    <button class="tpl-btn active" onclick="loadTpl('lending')">Lending</button>
+    <button class="tpl-btn" onclick="loadTpl('bridge')">Bridge</button>
+    <button class="tpl-btn" onclick="loadTpl('stablecoin')">Stablecoin</button>
+    <button class="tpl-btn" onclick="loadTpl('dex')">DEX</button>
+    <button class="tpl-btn" onclick="loadTpl('governance')">Governance</button>
+    <button class="tpl-btn" onclick="loadTpl('blank')">Blank</button>
+  </div>
+  <div class="topbar-right">
+    <div class="status-pill idle" id="sPill"><div class="status-dot" id="sDot"></div><span id="sTxt">Ready</span></div>
+    <button class="hunt-btn" id="huntBtn" onclick="hunt()">Analyze Spec</button>
+    <button class="run-btn" id="runBtn" onclick="sim()">▶ Run</button>
+  </div>
+</div>
+
+<div class="workspace">
+  <!-- Left -->
+  <div class="exploit-panel">
+    <div class="panel-header">
+      <span class="panel-title">Exploit Surface</span>
+      <span class="panel-count" id="eCount">0 found</span>
+    </div>
+    <div class="exploit-list" id="eList">
+      <div class="empty-state">
+        <div class="empty-icon">⬡</div>
+        <div class="empty-text">Hit <strong style="color:var(--purple)">Analyze Spec</strong><br>to analyze present and future attack surface.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Editor -->
+  <div class="editor-panel">
+    <div class="editor-header">
+      <div class="file-tab"><div style="width:5px;height:5px;border-radius:50%;background:var(--accent)"></div>protocol.isl</div>
+      <span style="font-size:10px;color:var(--dim);margin-left:auto">ISL · Invariant Protocol</span>
+    </div>
+    <div class="editor-wrap">
+      <div class="line-numbers" id="lnums"></div>
+      <div class="editor-area">
+        <div id="isl-hl" aria-hidden="true"></div>
+        <textarea id="isl-editor" spellcheck="false" autocomplete="off"
+          oninput="onInput()" onscroll="syncScroll()" onkeydown="handleTab(event)"></textarea>
+      </div>
+    </div>
+    <div class="editor-errors" id="eErrors"></div>
+  </div>
+
+  <!-- Right -->
+  <div class="right-panel">
+    <div class="right-header">
+      <div class="rtabs">
+        <button class="rtab aitab active" onclick="switchTab('threat')">Threat Analysis</button>
+        <button class="rtab" onclick="switchTab('coverage')">Coverage Map</button>
+        <button class="rtab" onclick="switchTab('state')">State</button>
+        <button class="rtab" onclick="switchTab('results')">Results</button>
+        <button class="rtab" id="proofTab" onclick="switchTab('proof')">Proof Path</button>
+      </div>
+      <span style="font-size:9px;color:var(--dim)" id="epochLbl">EPOCH —</span>
+    </div>
+    <div class="right-body" id="rBody">
+      <div id="tab-threat">
+
+        <!-- Demo Mode banner -->
+        <div id="demoBanner" style="background:rgba(0,212,255,.04);border:1px solid rgba(0,212,255,.18);padding:12px 14px;margin-bottom:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);border:1px solid var(--accent2);padding:2px 7px">Demo Mode</div>
+              <span style="font-size:10px;color:var(--dim)">Bridge · Fee-on-transfer event mismatch</span>
+            </div>
+            <div style="display:flex;gap:6px">
+              <button id="resetDemoBtn" onclick="resetDemo()" style="display:none;font-family:var(--mono);font-size:9px;padding:4px 10px;background:transparent;border:1px solid var(--border);color:var(--dim);cursor:pointer;letter-spacing:.06em">↺ Reset</button>
+              <button id="runDemoBtn" onclick="runDemo()" style="background:var(--accent);color:#000;font-family:var(--mono);font-size:10px;font-weight:600;padding:5px 14px;border:none;cursor:pointer;letter-spacing:.06em">Run Demo →</button>
+            </div>
+          </div>
+          <!-- Progress rail -->
+          <div id="progressRail" style="display:flex;align-items:center;gap:0">
+            <div class="pr-step" id="pr-spec" style="display:flex;align-items:center;gap:5px;font-size:9px;color:var(--muted);letter-spacing:.08em">
+              <div class="pr-dot" style="width:6px;height:6px;border-radius:50%;border:1px solid var(--muted);flex-shrink:0"></div>Spec
+            </div>
+            <div class="pr-line" style="flex:1;height:1px;background:var(--border);margin:0 6px"></div>
+            <div class="pr-step" id="pr-witness" style="display:flex;align-items:center;gap:5px;font-size:9px;color:var(--muted);letter-spacing:.08em">
+              <div class="pr-dot" style="width:6px;height:6px;border-radius:50%;border:1px solid var(--muted);flex-shrink:0"></div>Witness
+            </div>
+            <div class="pr-line" style="flex:1;height:1px;background:var(--border);margin:0 6px"></div>
+            <div class="pr-step" id="pr-proof" style="display:flex;align-items:center;gap:5px;font-size:9px;color:var(--muted);letter-spacing:.08em">
+              <div class="pr-dot" style="width:6px;height:6px;border-radius:50%;border:1px solid var(--muted);flex-shrink:0"></div>Proof
+            </div>
+            <div class="pr-line" style="flex:1;height:1px;background:var(--border);margin:0 6px"></div>
+            <div class="pr-step" id="pr-finality" style="display:flex;align-items:center;gap:5px;font-size:9px;color:var(--muted);letter-spacing:.08em">
+              <div class="pr-dot" style="width:6px;height:6px;border-radius:50%;border:1px solid var(--muted);flex-shrink:0"></div>Finality
+            </div>
+            <div class="pr-line" style="flex:1;height:1px;background:var(--border);margin:0 6px"></div>
+            <div class="pr-step" id="pr-claim" style="display:flex;align-items:center;gap:5px;font-size:9px;color:var(--muted);letter-spacing:.08em">
+              <div class="pr-dot" style="width:6px;height:6px;border-radius:50%;border:1px solid var(--muted);flex-shrink:0"></div>Claim
+            </div>
+          </div>
+        </div>
+
+        <div class="ai-stream" id="aiStream">
+          <div style="color:var(--dim);font-size:10px;line-height:1.8;text-align:center;padding:20px 0">
+            Hit <strong style="color:var(--accent)">Run Demo →</strong> to see a live violation<br>
+            from spec to executable claim in 20 seconds.<br><br>
+            Or load any template and hit Analyze Spec<br>
+            to surface present and future attack surface.
+          </div>
+        </div>
+        <div id="tfList" style="margin-top:12px"></div>
+      </div>
+      <div id="tab-coverage" style="display:none">
+        <div id="coverageContent"></div>
+      </div>
+      <div id="tab-state" style="display:none">
+        <div class="epoch-bar"><div class="epoch-fill" id="eFill" style="width:0%"></div></div>
+        <div class="epoch-info"><span id="eNum">Epoch —</span><span id="bNum">Block —</span></div>
+        <div id="stateContent"></div>
+      </div>
+      <div id="tab-results" style="display:none">
+        <div class="epoch-bar"><div class="epoch-fill" style="width:0%"></div></div>
+        <div id="resContent" style="color:var(--dim);font-size:11px;text-align:center;padding:30px">Run simulation to see results.</div>
+      </div>
+      <div id="tab-proof" style="display:none">
+        <div id="proofContent"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const TMPLS = {
+  lending:`// ISL — Lending Protocol Invariants
+@protocol pool         = env("LENDING_POOL")
+@protocol configurator = env("POOL_CONFIGURATOR")
+@protocol oracle       = env("PRICE_ORACLE")
+
+@invariant ltv_enforcement_consistency
+@severity  Solvency
+@protocol  pool, configurator
+
+  // Governance asymmetry: two functions zero LTV, only one updates bitmap
+  @constraint ltv_zero_propagates_to_all_access_paths
+    forall asset in ACTIVE_ASSETS:
+      forall emode_id in ACTIVE_EMODE_CATEGORIES:
+        implies(
+          and(base_ltv(asset) == 0,
+              in_collateral_bitmap(asset, emode_id)),
+          ltv_zero_bitmap_set(asset, emode_id)
+        )
+
+  @constraint frozen_asset_effective_ltv_zero
+    forall asset in FROZEN_ASSETS:
+      forall emode_id in ACTIVE_EMODE_CATEGORIES:
+        effective_ltv(asset, emode_id) == 0
+
+@invariant reserve_solvency
+@severity  Solvency
+@protocol  pool
+
+  @constraint total_debt_within_threshold
+    forall asset in ACTIVE_ASSETS:
+      let total_debt = total_variable_debt(asset) + total_stable_debt(asset)
+      total_debt * 10000 <= total_liquidity(asset) * liquidation_threshold(asset)
+
+  @constraint liquidity_index_non_decreasing
+    forall asset in ACTIVE_ASSETS:
+      liquidity_index(asset) >= previously(liquidity_index(asset), 1)
+
+@invariant share_accounting_integrity
+@severity  Solvency
+@protocol  pool
+
+  @constraint no_ghost_shares
+    forall debt_class in [STABLE_DEBT, VARIABLE_DEBT]:
+      implies(total_debt(debt_class) == 0, total_shares(debt_class) == 0)
+
+@invariant oracle_freshness
+@severity  Solvency
+@protocol  oracle
+
+  @constraint price_not_stale
+    forall asset in ACTIVE_ASSETS:
+      current_block() - last_update_block(asset) <= 300`,
+
+  bridge:`// ISL — Bridge Protocol Invariants
+@protocol src = env("BRIDGE_SOURCE")
+@protocol dst = env("BRIDGE_DESTINATION")
+
+@invariant bridge_balance_conservation
+@severity  Solvency
+@composite [src, dst]
+
+  @constraint tvl_covers_liabilities
+    forall asset in BRIDGED_ASSETS:
+      cross_field(SRC, src, locked(asset)) + cross_field(SRC, src, inflight(asset)) >=
+      cross_field(DST, dst, liabilities(asset))
+
+  @constraint no_double_settlement
+    forall msg_id in RECENT_MESSAGES(200):
+      settled_count(msg_id) <= 1
+
+@invariant event_integrity
+@severity  Bridge
+@protocol  src
+
+  @constraint emitted_amount_matches_delta
+    forall swap_id in RECENT_SWAPS(100):
+      event_field(SwapEvent, swap_id, "fromAmount") == balance_delta(swap_id)
+
+@invariant nonce_ordering
+@severity  Bridge
+@composite [src, dst]
+
+  @constraint burn_before_mint
+    forall nonce in RECENT_NONCES(1000):
+      implies(minted(nonce) > 0, burned(nonce) > 0)`,
+
+  stablecoin:`// ISL — Stablecoin CDP Invariants
+@protocol cdp    = env("CDP_ENGINE")
+@protocol oracle = env("PRICE_ORACLE")
+@protocol pool   = env("STABILITY_POOL")
+
+@invariant debt_share_accounting
+@severity  Solvency
+@protocol  cdp
+
+  // Ghost share: full repayment leaves rounding residual
+  @constraint shares_require_debt
+    forall debt_class in [FREE_DEBT, PAID_DEBT]:
+      implies(total_shares(debt_class) > 0, total_debt(debt_class) > 0)
+      implies(total_debt(debt_class) == 0,  total_shares(debt_class) == 0)
+
+@invariant global_collateral_ratio
+@severity  Solvency
+@protocol  cdp
+
+  @constraint system_overcollateralized
+    implies(total_debt() > 0,
+      total_collateral() * 10000 >= total_debt() * 15000)
+
+@invariant peg_stability
+@severity  Peg
+@protocol  oracle
+
+  @constraint price_within_band
+    and(stablecoin_price() >= 950000, stablecoin_price() <= 1050000)`,
+
+  dex:`// ISL — DEX / AMM Invariants
+@protocol factory = env("AMM_FACTORY")
+@protocol v3pool  = env("V3_POOL")
+
+@invariant constant_product_integrity
+@severity  Solvency
+@protocol  factory
+
+  @constraint k_non_decreasing_without_removal
+    forall pair in ACTIVE_PAIRS:
+      implies(lp_supply(pair) >= prev_lp_supply(pair),
+        reserve0(pair) * reserve1(pair) >= prev_reserve0(pair) * prev_reserve1(pair))
+
+  @constraint reserves_match_balances
+    forall pair in ACTIVE_PAIRS:
+      and(token0_balance(pair) >= reserve0(pair), token1_balance(pair) >= reserve1(pair))
+
+@invariant v3_price_tick_consistency
+@severity  Solvency
+@protocol  v3pool
+
+  @constraint sqrt_price_within_tick
+    forall pool in V3_POOLS:
+      and(
+        sqrt_price(pool) >= tick_lower_sqrt(current_tick(pool)),
+        sqrt_price(pool) <= tick_upper_sqrt(current_tick(pool) + 1)
+      )
+
+  @constraint fee_growth_non_decreasing
+    forall pool in V3_POOLS:
+      and(fee_growth0(pool) >= previously(fee_growth0(pool), 1),
+          fee_growth1(pool) >= previously(fee_growth1(pool), 1))`,
+
+  governance:`// ISL — Governance Invariants
+@protocol gov  = env("GOVERNOR")
+@protocol lock = env("TIMELOCK")
+
+@invariant timelock_enforced
+@severity  Governance
+@protocol  lock
+
+  @constraint execution_respects_eta
+    forall tx in QUEUED_TRANSACTIONS:
+      implies(executed_block(tx) > 0, executed_block(tx) >= eta(tx))
+
+  @constraint eta_respects_min_delay
+    forall tx in QUEUED_TRANSACTIONS:
+      eta(tx) >= queued_block(tx) + min_delay(lock)
+
+@invariant voting_integrity
+@severity  Governance
+@protocol  gov
+
+  @constraint votes_bounded_by_snapshot
+    forall proposal in ACTIVE_PROPOSALS:
+      forall voter in VOTERS(proposal):
+        votes_cast(proposal, voter) <= balance_at(voter, snapshot_block(proposal))
+
+@invariant proposal_state_machine
+@severity  Governance
+@protocol  gov
+
+  @constraint defeated_stays_defeated
+    forall proposal in ALL_PROPOSALS:
+      implies(previously(state(proposal) == DEFEATED, 1), state(proposal) != EXECUTED)`,
+
+  blank:`// ISL — Custom Invariant Specification
+@protocol my_protocol = env("PROTOCOL_ADDRESS")
+
+@invariant my_invariant
+@severity  Solvency
+@protocol  my_protocol
+
+  @constraint my_constraint
+    forall asset in ACTIVE_ASSETS:
+      implies(total_shares(asset) > 0, total_debt(asset) > 0)`
+};
+
+const DEF_STATE = {
+  lending:{'base_ltv(WBTC)':'8000','in_collateral_bitmap(WBTC,1)':'true','ltv_zero_bitmap_set(WBTC,1)':'true','effective_ltv(WBTC,1)':'8000','total_variable_debt(ETH)':'5000','total_stable_debt(ETH)':'500','total_liquidity(ETH)':'10000','liquidation_threshold(ETH)':'8500','liquidity_index(USDC)':'1100000000000','prev_liquidity_index(USDC)':'1090000000000','total_shares(STABLE_DEBT)':'5000','total_debt(STABLE_DEBT)':'5100','last_update_block(ETH)':'21847050'},
+  bridge:{'locked(USDC)':'1000000','inflight(USDC)':'50000','liabilities(USDC)':'900000','settled_count(msg_001)':'1','event_fromAmount(swap_001)':'1000','balance_delta(swap_001)':'1000','burned(nonce_9921)':'50000','minted(nonce_9921)':'50000'},
+  stablecoin:{'total_shares(PAID_DEBT)':'1000','total_debt(PAID_DEBT)':'1050','total_shares(FREE_DEBT)':'500','total_debt(FREE_DEBT)':'500','total_collateral()':'180000','total_debt()':'100000','stablecoin_price()':'1000000'},
+  dex:{'reserve0(ETH_USDC)':'1000','reserve1(ETH_USDC)':'2000000','prev_reserve0(ETH_USDC)':'1000','prev_reserve1(ETH_USDC)':'2000000','lp_supply(ETH_USDC)':'1414213','prev_lp_supply(ETH_USDC)':'1414213','token0_balance(ETH_USDC)':'1000','token1_balance(ETH_USDC)':'2000000','sqrt_price(POOL)':'1461446703485210103287273052203988822378723970341','current_tick(POOL)':'200000','fee_growth0(POOL)':'1000000','prev_fee_growth0(POOL)':'999500'},
+  governance:{'executed_block(tx_001)':'18600100','eta(tx_001)':'18600000','queued_block(tx_001)':'18592800','min_delay(lock)':'7200','votes_cast(prop_42,alice)':'100000','balance_at(alice,snap)':'100000','vote_count(prop_42,alice)':'1','state(prop_17)':'SUCCEEDED','prev_state(prop_17)':'QUEUED'},
+  blank:{'total_shares(ASSET)':'1000','total_debt(ASSET)':'1050'}
+};
+
+let cur = 'lending', curTab = 'threat', mockActive = null;
+let generatedExploits = [], selOpts = new Set(['forward-looking','upgrade-risk','composability']);
+let epoch = 4821, mockState = {}, activeViolation = null;
+
+document.addEventListener('DOMContentLoaded', () => { loadTpl('lending'); startEpoch(); });
+
+function loadTpl(name) {
+  cur = name; mockActive = null; mockState = {}; generatedExploits = []; activeViolation = null;
+  document.querySelectorAll('.tpl-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === name));
+  document.getElementById('isl-editor').value = TMPLS[name];
+  hl(); updateLN();
+  renderExploits([]);
+  setStatus('idle','Ready');
+  if (curTab === 'state') renderState();
+}
+
+function hl() {
+  const code = document.getElementById('isl-editor').value;
+  const e = code.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  document.getElementById('isl-hl').innerHTML = e
+    .replace(/(\/\/[^\n]*)/g,'<span class="cmt">$1</span>')
+    .replace(/\b(@invariant|@severity|@protocol|@constraint|@composite)\b/g,'<span class="kw">$1</span>')
+    .replace(/\b(forall|implies|and|or|not|let|in|env|cross_field|field|event_field|balance_delta|previously|mulDiv|abs_diff)\b/g,'<span class="fn">$1</span>')
+    .replace(/\b(Solvency|Liquidity|Bridge|Governance|Peg|Composite|true|false|EXECUTED|DEFEATED|QUEUED|SUCCEEDED)\b/g,'<span class="kw2">$1</span>')
+    .replace(/\b(\d+)\b/g,'<span class="num">$1</span>')
+    .replace(/"([^"]*)"/g,'<span class="str">"$1"</span>');
+}
+
+function updateLN() {
+  const n = document.getElementById('isl-editor').value.split('\n').length;
+  document.getElementById('lnums').innerHTML = Array.from({length:n},(_,i)=>`<span>${i+1}</span>`).join('');
+}
+
+function syncScroll() {
+  const ed = document.getElementById('isl-editor'), h = document.getElementById('isl-hl'), l = document.getElementById('lnums');
+  h.scrollTop = ed.scrollTop; h.scrollLeft = ed.scrollLeft; l.scrollTop = ed.scrollTop;
+}
+
+function handleTab(e) {
+  if (e.key !== 'Tab') return; e.preventDefault();
+  const ed = e.target, s = ed.selectionStart;
+  ed.value = ed.value.substring(0,s) + '  ' + ed.value.substring(ed.selectionEnd);
+  ed.selectionStart = ed.selectionEnd = s + 2; hl();
+}
+
+function onInput() {
+  hl();
+  updateLN();
+  syncScroll();
+  // Re-analyze on every edit — semantic engine runs live
+  scheduleSemanticAnalysis();
+}
+
+function switchTab(tab) {
+  curTab = tab;
+  ['threat','coverage','state','results','proof'].forEach(t => {
+    const el = document.getElementById(`tab-${t}`);
+    if (el) el.style.display = t === tab ? 'block' : 'none';
+  });
+  document.querySelectorAll('.rtab').forEach(b => {
+    b.classList.toggle('active',
+      (tab==='threat' && b.textContent.includes('Threat')) ||
+      (tab==='coverage' && b.textContent.includes('Coverage')) ||
+      (tab==='state' && b.textContent.includes('State')) ||
+      (tab==='results' && b.textContent.includes('Results')) ||
+      (tab==='proof' && b.textContent.includes('Proof')));
+  });
+  if (tab === 'state') renderState(mockState);
+  if (tab === 'proof') renderProofPath();
+  if (tab === 'coverage') renderCoverageMap();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SEMANTIC EXTRACTION ENGINE
+// ═══════════════════════════════════════════════════════════════════════════
+// Reads the spec text in the editor and extracts an architectural profile.
+// Runs on every edit. Drives the dependency graph and future risk engine.
+//
+// Not a mock. Not template-based. The output is derived from what's
+// actually written in the spec — add a constraint, see it surface.
+//
+// What's extracted:
+//   - protocol type (lending / bridge / dex / stablecoin / governance)
+//   - declared invariants and constraints
+//   - assets referenced
+//   - privileged roles (admin / governance / oracle / relayer)
+//   - upgradeability indicators
+//   - oracle dependencies
+//   - external/composite calls
+//   - state machine references
+
+function escapeHtml(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function extractSemanticProfile(spec) {
+  const text = (spec || '').toLowerCase();
+  const lines = (spec || '').split('\n');
+
+  const profile = {
+    protocolType: detectProtocolType(spec),
+    invariants: [...spec.matchAll(/@invariant\s+(\w+)/g)].map(m => m[1]),
+    constraints: [...spec.matchAll(/@constraint\s+(\w+)/g)].map(m => m[1]),
+    severities: [...spec.matchAll(/@severity\s+(\w+)/g)].map(m => m[1]),
+    protocols: [...spec.matchAll(/@protocol\s+(\w+)\s*=/g)].map(m => m[1]),
+    composites: /@composite/.test(spec),
+    assets: extractAssets(spec),
+    upgradeability: detectUpgradeability(text),
+    oracleUsage: /oracle|price|last_update_block|stale/.test(text),
+    eventUsage: /event_field|emit|swapevent/.test(text),
+    crossChain: /cross_field|src_chain|dst_chain|bridge/.test(text),
+    governance: /timelock|proposal|votes_cast|quorum/.test(text),
+    sharedAccounting: /total_shares|total_debt|mulDiv/.test(text),
+    bitmapLogic: /bitmap|collateral_bitmap/.test(text),
+    flashLoan: /flash|reentrancy/.test(text),
+    privilegedRoles: detectPrivilegedRoles(text),
+    quantifiers: countQuantifiers(spec),
+    temporalRefs: countTemporal(spec),
+    lineCount: lines.length
+  };
+
+  return profile;
+}
+
+function detectProtocolType(spec) {
+  const s = spec.toLowerCase();
+  if (/borrow|liquidat|collateral|ltv|debt/.test(s)) return 'lending';
+  if (/bridge|minted|burned|cross_field|destination/.test(s)) return 'bridge';
+  if (/reserve0|reserve1|sqrt_price|tick|amm/.test(s)) return 'dex';
+  if (/peg|stablecoin|cdp|free_debt|paid_debt/.test(s)) return 'stablecoin';
+  if (/timelock|proposal|votes_cast|governor|quorum/.test(s)) return 'governance';
+  return 'generic';
+}
+
+function extractAssets(spec) {
+  const re = /\b(USDC|USDT|DAI|ETH|WETH|WBTC|BTC|LINK|UNI|AAVE|FRAX|stETH|rETH|cbETH)\b/g;
+  return [...new Set(spec.match(re) || [])];
+}
+
+function detectUpgradeability(text) {
+  return /proxy|upgrade|implementation|delegatecall|admin_change/.test(text);
+}
+
+function detectPrivilegedRoles(text) {
+  const roles = [];
+  if (/admin|owner/.test(text)) roles.push('admin');
+  if (/governance|governor|timelock/.test(text)) roles.push('governance');
+  if (/oracle/.test(text)) roles.push('oracle');
+  if (/relayer/.test(text)) roles.push('relayer');
+  if (/keeper|liquidator/.test(text)) roles.push('keeper');
+  return roles;
+}
+
+function countQuantifiers(spec) {
+  return {
+    forall: (spec.match(/\bforall\b/g) || []).length,
+    exists: (spec.match(/\bexists\b/g) || []).length,
+    implies: (spec.match(/\bimplies\b/g) || []).length
+  };
+}
+
+function countTemporal(spec) {
+  return (spec.match(/previously\s*\(/g) || []).length;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// INVARIANT DEPENDENCY GRAPH
+// ═══════════════════════════════════════════════════════════════════════════
+// For each constraint, derives:
+//   - what it PROTECTS (downstream property)
+//   - what it DEPENDS on (upstream property)
+//   - what it ATTACKS (adversarial surface it covers)
+//   - whether there's a GAP (related risk not addressed by any constraint)
+
+function buildInvariantGraph(profile) {
+  const graph = {};
+
+  for (const c of profile.constraints) {
+    graph[c] = {
+      protects: [],
+      depends: [],
+      attacks: [],
+      isGap: false
+    };
+  }
+
+  for (const c of profile.constraints) {
+    const cl = c.toLowerCase();
+
+    // What it protects
+    if (cl.includes('bitmap') || cl.includes('ltv')) {
+      graph[c].protects.push('collateral access path');
+    }
+    if (cl.includes('share') || cl.includes('ghost')) {
+      graph[c].protects.push('borrower share value');
+      graph[c].depends.push('mulDiv rounding behavior');
+    }
+    if (cl.includes('oracle') || cl.includes('stale') || cl.includes('price')) {
+      graph[c].protects.push('pricing input freshness');
+      graph[c].depends.push('external oracle liveness');
+    }
+    if (cl.includes('liquidity') || cl.includes('index')) {
+      graph[c].protects.push('reserve accounting integrity');
+    }
+    if (cl.includes('debt') || cl.includes('threshold') || cl.includes('solven')) {
+      graph[c].protects.push('protocol solvency');
+      graph[c].attacks.push('cascade liquidation');
+    }
+    if (cl.includes('emit') || cl.includes('event') || cl.includes('match')) {
+      graph[c].protects.push('off-chain consumer integrity');
+      graph[c].attacks.push('relayer payout divergence');
+    }
+    if (cl.includes('settled') || cl.includes('nonce') || cl.includes('burn') || cl.includes('mint')) {
+      graph[c].protects.push('cross-chain accounting');
+      graph[c].attacks.push('double settlement');
+    }
+    if (cl.includes('timelock') || cl.includes('eta') || cl.includes('queued')) {
+      graph[c].protects.push('governance execution delay');
+      graph[c].attacks.push('timelock bypass');
+    }
+    if (cl.includes('vote') || cl.includes('snapshot') || cl.includes('quorum')) {
+      graph[c].protects.push('voting power integrity');
+      graph[c].attacks.push('flash loan governance attack');
+    }
+    if (cl.includes('k_') || cl.includes('reserve') || cl.includes('constant_product')) {
+      graph[c].protects.push('AMM invariant k');
+      graph[c].attacks.push('liquidity extraction without fee');
+    }
+    if (cl.includes('peg') || cl.includes('band')) {
+      graph[c].protects.push('stablecoin peg');
+      graph[c].depends.push('oracle accuracy');
+    }
+    if (cl.includes('tick') || cl.includes('sqrt')) {
+      graph[c].protects.push('concentrated liquidity pricing');
+    }
+    if (cl.includes('fee_growth')) {
+      graph[c].protects.push('LP fee accounting');
+    }
+
+    // Default fallback so every constraint has at least one entry
+    if (!graph[c].protects.length && !graph[c].depends.length && !graph[c].attacks.length) {
+      graph[c].protects.push('protocol-defined property');
+    }
+  }
+
+  // Identify GAPS — known risks for this protocol type that no constraint covers
+  const gaps = identifyGaps(profile, graph);
+  for (const gap of gaps) {
+    graph['__GAP__' + gap.id] = {
+      protects: [],
+      depends: [],
+      attacks: [gap.attack],
+      isGap: true,
+      gapReason: gap.reason
+    };
+  }
+
+  return graph;
+}
+
+function identifyGaps(profile, graph) {
+  const gaps = [];
+  const constraintText = profile.constraints.join(' ').toLowerCase();
+
+  if (profile.protocolType === 'lending') {
+    if (!/oracle|stale|fresh/.test(constraintText)) {
+      gaps.push({ id: 'oracle', attack: 'stale oracle exploitation', reason: 'no oracle freshness invariant declared' });
+    }
+    if (!/share|ghost/.test(constraintText)) {
+      gaps.push({ id: 'shares', attack: 'ghost share residual', reason: 'no share accounting invariant declared' });
+    }
+    if (!/liquid|solven|threshold/.test(constraintText)) {
+      gaps.push({ id: 'solvency', attack: 'silent insolvency', reason: 'no solvency threshold invariant declared' });
+    }
+  }
+
+  if (profile.protocolType === 'bridge') {
+    if (!/emit|event|match/.test(constraintText)) {
+      gaps.push({ id: 'event_integrity', attack: 'event integrity divergence', reason: 'no event-balance reconciliation invariant declared' });
+    }
+    if (!/nonce|settled/.test(constraintText)) {
+      gaps.push({ id: 'replay', attack: 'message replay attack', reason: 'no nonce ordering invariant declared' });
+    }
+    if (!/conservation|covers|tvl/.test(constraintText)) {
+      gaps.push({ id: 'conservation', attack: 'reserve undercollateralization', reason: 'no cross-chain balance conservation invariant declared' });
+    }
+  }
+
+  if (profile.protocolType === 'dex') {
+    if (!/k_|reserve|product/.test(constraintText)) {
+      gaps.push({ id: 'k_invariant', attack: 'pool value extraction', reason: 'no constant product invariant declared' });
+    }
+    if (!/fee_growth/.test(constraintText)) {
+      gaps.push({ id: 'fee_accounting', attack: 'fee accounting drift', reason: 'no fee growth monotonicity declared' });
+    }
+  }
+
+  if (profile.protocolType === 'governance') {
+    if (!/timelock|eta/.test(constraintText)) {
+      gaps.push({ id: 'timelock', attack: 'timelock bypass', reason: 'no timelock enforcement invariant declared' });
+    }
+    if (!/snapshot|balance_at/.test(constraintText)) {
+      gaps.push({ id: 'snapshot', attack: 'flash loan governance attack', reason: 'no voting snapshot enforcement declared' });
+    }
+  }
+
+  if (profile.protocolType === 'stablecoin') {
+    if (!/peg|band/.test(constraintText)) {
+      gaps.push({ id: 'peg', attack: 'peg deviation undetected', reason: 'no peg stability invariant declared' });
+    }
+    if (!/collateral_ratio|over/.test(constraintText)) {
+      gaps.push({ id: 'cr', attack: 'undercollateralization', reason: 'no global collateral ratio invariant declared' });
+    }
+  }
+
+  // Universal gaps
+  if (profile.upgradeability && !graph['__upgrade_check__']) {
+    gaps.push({ id: 'upgrade', attack: 'storage layout drift after upgrade', reason: 'upgradeability detected but no upgrade-safety invariant declared' });
+  }
+
+  if (profile.privilegedRoles.length > 0 && !/admin|role|owner/.test(constraintText)) {
+    gaps.push({ id: 'admin', attack: 'privileged role abuse', reason: `${profile.privilegedRoles.length} privileged role(s) detected but no role-action invariants declared` });
+  }
+
+  return gaps;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FUTURE RISK ENGINE
+// ═══════════════════════════════════════════════════════════════════════════
+// Synthesizes forward-looking exploits from the semantic profile.
+// Not a static template — generated based on what the spec is and isn't.
+
+function generateFutureRisks(profile) {
+  const risks = [];
+
+  if (profile.upgradeability) {
+    risks.push({
+      id: 'fr-upgrade-drift',
+      severity: 'High',
+      type: 'future',
+      timeHorizon: '6months',
+      name: 'Storage layout drift after upgrade',
+      desc: 'Invariant relies on storage slot positions. After a proxy upgrade, slot layout may shift — constraint reads stale or wrong slot. Violation goes undetected for one epoch minimum.',
+      reason: 'upgradeability indicators detected in spec'
+    });
+  }
+
+  if (profile.protocolType === 'dex') {
+    risks.push({
+      id: 'fr-hook-bypass',
+      severity: 'Critical',
+      type: 'future',
+      timeHorizon: '1year',
+      name: 'Hook-mediated liquidity bypass',
+      desc: 'As V4-style hooks roll out, hook callbacks may modify liquidity outside standard tick crossing paths. Invariant assumes all liquidity changes go through standard accounting — hook changes bypass it.',
+      reason: 'DEX protocol type — V4 hook architecture emerging'
+    });
+  }
+
+  if (profile.protocolType === 'lending' && profile.privilegedRoles.includes('governance')) {
+    risks.push({
+      id: 'fr-configurator-rotate',
+      severity: 'Critical',
+      type: 'future',
+      timeHorizon: '3months',
+      name: 'New configurator admin bypasses enforcement',
+      desc: 'Governance can rotate configurator admin. Invariant points to current configurator. New admin enforcement window remains until invariant is re-registered against new address.',
+      reason: 'lending + governance role detected'
+    });
+  }
+
+  if (profile.protocolType === 'bridge' && !profile.constraints.some(c => /reorg|finality/i.test(c))) {
+    risks.push({
+      id: 'fr-reorg-double-spend',
+      severity: 'Critical',
+      type: 'present',
+      timeHorizon: 'now',
+      name: 'Source chain reorg double-spend',
+      desc: 'Balance conservation assumes source chain finality. Under reorg, burn reverses while destination mint stands. No constraint encodes minimum finality depth.',
+      reason: 'bridge protocol — no reorg-finality constraint detected'
+    });
+  }
+
+  if (profile.oracleUsage && !profile.constraints.some(c => c.toLowerCase().includes('thin') || c.toLowerCase().includes('liquidity'))) {
+    risks.push({
+      id: 'fr-oracle-thin-liquidity',
+      severity: 'High',
+      type: 'future',
+      timeHorizon: '3months',
+      name: 'Oracle threshold exploitable for thin-liquidity assets',
+      desc: 'Oracle freshness window acceptable for major assets is exploitable for long-tail assets added via governance. Generic threshold applied uniformly creates differential attack surface.',
+      reason: 'oracle dependency without per-asset threshold detected'
+    });
+  }
+
+  if (profile.sharedAccounting && !profile.constraints.some(c => c.toLowerCase().includes('upgrade'))) {
+    risks.push({
+      id: 'fr-ghost-share-upgrade',
+      severity: 'Critical',
+      type: 'future',
+      timeHorizon: '6months',
+      name: 'Ghost share residual survives contract upgrade',
+      desc: 'Non-zero totalShares with zero totalDebt at upgrade time. New implementation initializes from storage — ghost share infects new accounting model.',
+      reason: 'share-based accounting + upgradeability pattern'
+    });
+  }
+
+  if (profile.composites && !profile.constraints.some(c => c.toLowerCase().includes('slot'))) {
+    risks.push({
+      id: 'fr-cross-chain-slot',
+      severity: 'High',
+      type: 'future',
+      timeHorizon: '6months',
+      name: 'Cross-chain storage slot assumption breaks on new chain',
+      desc: 'Composite invariants use generic slot mappings. New chain integration with different EVM version or custom precompile reads wrong slot — constraint silently passes.',
+      reason: 'composite invariant declared without slot-pinning'
+    });
+  }
+
+  return risks;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// LIVE ANALYSIS — debounced re-run on every edit
+// ═══════════════════════════════════════════════════════════════════════════
+
+let _analysisTimer = null;
+let _currentProfile = null;
+let _currentGraph = null;
+let _currentFutureRisks = [];
+
+function scheduleSemanticAnalysis() {
+  if (_analysisTimer) clearTimeout(_analysisTimer);
+  _analysisTimer = setTimeout(runSemanticAnalysis, 300);
+}
+
+function runSemanticAnalysis() {
+  const spec = document.getElementById('isl-editor').value;
+  _currentProfile = extractSemanticProfile(spec);
+  _currentGraph = buildInvariantGraph(_currentProfile);
+  _currentFutureRisks = generateFutureRisks(_currentProfile);
+
+  // If coverage tab is open, refresh it live
+  if (curTab === 'coverage') renderCoverageMap();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// COVERAGE MAP RENDERER
+// ═══════════════════════════════════════════════════════════════════════════
+
+function renderCoverageMap() {
+  if (!_currentProfile) runSemanticAnalysis();
+  const p = _currentProfile;
+  const g = _currentGraph;
+  const risks = _currentFutureRisks;
+
+  const content = document.getElementById('coverageContent');
+  if (!p || !p.constraints.length) {
+    content.innerHTML = `<div class="cov-empty">
+      Write an ISL spec in the editor.<br>
+      Coverage map will render here in real time.
+    </div>`;
+    return;
+  }
+
+  const constraintEntries = Object.entries(g).filter(([k,v]) => !v.isGap);
+  const gapEntries = Object.entries(g).filter(([k,v]) => v.isGap);
+
+  const html = `
+    <div class="cov-header">Semantic Profile</div>
+    <div class="cov-meta">
+      <div class="cov-meta-cell">
+        <div class="cov-meta-num">${escapeHtml(String(p.invariants.length))}</div>
+        <div class="cov-meta-label">Invariants</div>
+      </div>
+      <div class="cov-meta-cell">
+        <div class="cov-meta-num">${escapeHtml(String(p.constraints.length))}</div>
+        <div class="cov-meta-label">Constraints</div>
+      </div>
+      <div class="cov-meta-cell">
+        <div class="cov-meta-num ${gapEntries.length ? 'crit' : ''}">${escapeHtml(String(gapEntries.length))}</div>
+        <div class="cov-meta-label">Gaps Detected</div>
+      </div>
+      <div class="cov-meta-cell">
+        <div class="cov-meta-num ${risks.length ? 'warn' : ''}">${escapeHtml(String(risks.length))}</div>
+        <div class="cov-meta-label">Future Risks</div>
+      </div>
+    </div>
+
+    <div class="cov-profile">
+      <div class="cov-profile-row">
+        <div class="cov-profile-key">Protocol Type</div>
+        <div class="cov-profile-val">${escapeHtml(p.protocolType)}</div>
+      </div>
+      <div class="cov-profile-row">
+        <div class="cov-profile-key">Protocols Bound</div>
+        <div class="cov-profile-val">${p.protocols.length ? escapeHtml(p.protocols.join(', ')) : '<span style="color:var(--muted)">none</span>'}</div>
+      </div>
+      <div class="cov-profile-row">
+        <div class="cov-profile-key">Assets Referenced</div>
+        <div class="cov-profile-val">${p.assets.length ? escapeHtml(p.assets.join(', ')) : '<span style="color:var(--muted)">none</span>'}</div>
+      </div>
+      <div class="cov-profile-row">
+        <div class="cov-profile-key">Composite</div>
+        <div class="cov-profile-val ${p.composites ? 'ok' : ''}">${p.composites ? 'cross-protocol' : 'single-protocol'}</div>
+      </div>
+      <div class="cov-profile-row">
+        <div class="cov-profile-key">Upgradeability</div>
+        <div class="cov-profile-val ${p.upgradeability ? 'warn' : 'ok'}">${p.upgradeability ? 'detected — requires upgrade-safety invariant' : 'not detected'}</div>
+      </div>
+      <div class="cov-profile-row">
+        <div class="cov-profile-key">Privileged Roles</div>
+        <div class="cov-profile-val ${p.privilegedRoles.length ? 'warn' : 'ok'}">${p.privilegedRoles.length ? escapeHtml(p.privilegedRoles.join(', ')) : 'none'}</div>
+      </div>
+      <div class="cov-profile-row">
+        <div class="cov-profile-key">Oracle Dependency</div>
+        <div class="cov-profile-val ${p.oracleUsage ? 'warn' : ''}">${p.oracleUsage ? 'yes — staleness invariant recommended' : 'no'}</div>
+      </div>
+      <div class="cov-profile-row">
+        <div class="cov-profile-key">Quantifier Density</div>
+        <div class="cov-profile-val">forall: ${escapeHtml(String(p.quantifiers.forall))} · implies: ${escapeHtml(String(p.quantifiers.implies))} · exists: ${escapeHtml(String(p.quantifiers.exists))}</div>
+      </div>
+      <div class="cov-profile-row">
+        <div class="cov-profile-key">Temporal Refs</div>
+        <div class="cov-profile-val">${escapeHtml(String(p.temporalRefs))} <span style="color:var(--muted)">previously() calls</span></div>
+      </div>
+    </div>
+
+    ${constraintEntries.length ? `
+    <div class="cov-header">Constraint Dependency Graph</div>
+    ${constraintEntries.map(([name, node]) => `
+      <div class="cov-graph-item">
+        <div class="cov-graph-name">${escapeHtml(name)}</div>
+        ${node.protects.map(p => `
+          <div class="cov-graph-line">
+            <span class="cov-graph-arrow">→</span>
+            <span class="cov-graph-relation">protects</span>
+            <span class="cov-graph-target">${escapeHtml(p)}</span>
+          </div>`).join('')}
+        ${node.depends.map(d => `
+          <div class="cov-graph-line">
+            <span class="cov-graph-arrow">←</span>
+            <span class="cov-graph-relation depends">depends on</span>
+            <span class="cov-graph-target">${escapeHtml(d)}</span>
+          </div>`).join('')}
+        ${node.attacks.map(a => `
+          <div class="cov-graph-line">
+            <span class="cov-graph-arrow">⚠</span>
+            <span class="cov-graph-relation attacks">defends against</span>
+            <span class="cov-graph-target">${escapeHtml(a)}</span>
+          </div>`).join('')}
+      </div>
+    `).join('')}` : ''}
+
+    ${gapEntries.length ? `
+    <div class="cov-header" style="margin-top:18px">Coverage Gaps</div>
+    ${gapEntries.map(([name, node]) => `
+      <div class="cov-graph-item gap">
+        <div class="cov-gap-badge">GAP</div>
+        <div class="cov-graph-name" style="color:var(--red)">${escapeHtml(node.attacks[0] || 'unknown gap')}</div>
+        <div class="cov-graph-line">
+          <span class="cov-graph-arrow">!</span>
+          <span class="cov-graph-relation attacks">unaddressed surface</span>
+          <span class="cov-graph-target">${escapeHtml(node.gapReason || '')}</span>
+        </div>
+      </div>
+    `).join('')}` : ''}
+
+    ${risks.length ? `
+    <div class="cov-header" style="margin-top:18px">Forward-Looking Risks</div>
+    ${risks.map(r => `
+      <div class="cov-graph-item" style="border-left-color:var(--purple)">
+        <div class="cov-gap-badge" style="color:var(--purple);border-color:rgba(168,85,247,0.3);background:rgba(168,85,247,0.06)">+${escapeHtml(r.timeHorizon)}</div>
+        <div class="cov-graph-name">${escapeHtml(r.name)}</div>
+        <div style="font-size:9.5px;color:var(--dim);line-height:1.6;margin:6px 0">${escapeHtml(r.desc)}</div>
+        <div class="cov-graph-line">
+          <span class="cov-graph-arrow">∵</span>
+          <span class="cov-graph-relation depends">basis</span>
+          <span class="cov-graph-target">${escapeHtml(r.reason)}</span>
+        </div>
+      </div>
+    `).join('')}` : ''}
+  `;
+
+  content.innerHTML = html;
+}
+
+// ─── Progress rail ───────────────────────────────────────────────────────────
+function advanceRail(step) {
+  const steps = ['spec','witness','proof','finality','claim'];
+  const idx = steps.indexOf(step);
+  steps.forEach((s, i) => {
+    const el = document.getElementById(`pr-${s}`);
+    if (!el) return;
+    const dot = el.querySelector('.pr-dot');
+    if (i < idx) {
+      el.style.color = 'var(--green)';
+      dot.style.background = 'var(--green)';
+      dot.style.borderColor = 'var(--green)';
+    } else if (i === idx) {
+      el.style.color = 'var(--accent)';
+      dot.style.background = 'var(--accent)';
+      dot.style.borderColor = 'var(--accent)';
+      dot.style.boxShadow = '0 0 6px var(--accent)';
+    } else {
+      el.style.color = 'var(--muted)';
+      dot.style.background = 'transparent';
+      dot.style.borderColor = 'var(--muted)';
+      dot.style.boxShadow = 'none';
+    }
+  });
+}
+
+function resetDemo() {
+  // Reset rail
+  ['spec','witness','proof','finality','claim'].forEach(s => {
+    const el = document.getElementById(`pr-${s}`);
+    if (!el) return;
+    const dot = el.querySelector('.pr-dot');
+    el.style.color = 'var(--muted)';
+    dot.style.background = 'transparent';
+    dot.style.borderColor = 'var(--muted)';
+    dot.style.boxShadow = 'none';
+  });
+  // Reset buttons
+  document.getElementById('runDemoBtn').style.display = 'block';
+  document.getElementById('resetDemoBtn').style.display = 'none';
+  // Reset state
+  mockState = {}; activeViolation = null; generatedExploits = [];
+  mockActive = null;
+  // Reset panels
+  document.getElementById('aiStream').innerHTML = `<div style="color:var(--dim);font-size:10px;line-height:1.8;text-align:center;padding:20px 0">Hit <strong style="color:var(--accent)">Run Demo →</strong> to see a live violation<br>from spec to executable claim in 20 seconds.<br><br>Or load any template and hit Analyze Spec<br>to surface present and future attack surface.</div>`;
+  document.getElementById('tfList').innerHTML = '';
+  renderExploits([]);
+  setStatus('idle','Ready');
+  // Reload bridge template clean
+  loadTpl('bridge');
+}
+
+// ─── Auto demo: Bridge FoT violation ─────────────────────────────────────────
+async function runDemo() {
+  document.getElementById('runDemoBtn').style.display = 'none';
+
+  // 1. Load bridge template
+  loadTpl('bridge');
+  advanceRail('spec');
+  await new Promise(r => setTimeout(r, 400));
+
+  setStatus('busy', 'Running demo...');
+  switchTab('threat');
+  document.getElementById('aiStream').innerHTML = `
+    <div style="font-size:11px;color:var(--dim);line-height:1.8">
+      <div style="color:var(--accent);font-size:10px;letter-spacing:.1em;margin-bottom:10px">BRIDGE · EVENT INTEGRITY VIOLATION</div>
+      <div style="margin-bottom:4px"><span style="color:var(--green)">✓</span> Spec loaded — swap_event_integrity invariant active</div>
+      <div style="margin-bottom:4px"><span style="color:var(--dim)">◌</span> Fetching protocol state...</div>
+    </div>`;
+
+  await new Promise(r => setTimeout(r, 700));
+
+  // 2. State witness
+  advanceRail('witness');
+  document.getElementById('aiStream').innerHTML = `
+    <div style="font-size:11px;color:var(--dim);line-height:1.8">
+      <div style="color:var(--accent);font-size:10px;letter-spacing:.1em;margin-bottom:10px">BRIDGE · EVENT INTEGRITY VIOLATION</div>
+      <div style="margin-bottom:4px"><span style="color:var(--green)">✓</span> Spec loaded — swap_event_integrity invariant active</div>
+      <div style="margin-bottom:4px"><span style="color:var(--green)">✓</span> State witness fetched — swap_001 captured at block 21,847,203</div>
+      <div style="margin-bottom:10px"><span style="color:var(--dim)">◌</span> Evaluating constraints...</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        <div style="background:var(--surface);border:1px solid var(--border);padding:8px 10px">
+          <div style="font-size:8px;color:var(--dim);margin-bottom:4px;letter-spacing:.1em">EVENT EMITS</div>
+          <div style="font-size:20px;color:var(--red);font-weight:600">1,000</div>
+          <div style="font-size:9px;color:var(--dim)">fromAmount — user-supplied</div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);padding:8px 10px">
+          <div style="font-size:8px;color:var(--dim);margin-bottom:4px;letter-spacing:.1em">ACTUAL RECEIVED</div>
+          <div style="font-size:20px;color:var(--green);font-weight:600">900</div>
+          <div style="font-size:9px;color:var(--dim)">balance_delta — correct</div>
+        </div>
+      </div>
+    </div>`;
+
+  await new Promise(r => setTimeout(r, 900));
+
+  // 3. ZK proof
+  advanceRail('proof');
+
+  const demoViolation = {
+    id: 'fot-event-mismatch',
+    severity: 'High',
+    type: 'present',
+    name: 'Swap event amount overstated — FoT token',
+    desc: 'Contract emits user-supplied fromAmount (1000). Actual received via balance delta: 900 (10% FoT tax). Relayer uses emitted value for destination payout. Bridge pays out on 1000, received 900.',
+    chain: ['User swaps 1000 FoT tokens (10% tax)', 'Contract receives 900 — balance delta correct', 'Swap event emits fromAmount=1000 — user-supplied', 'Relayer reads event: pays destination on 1000', 'Bridge short 100 tokens per swap'],
+    mockState: { 'event_fromAmount(swap_001)': '1000', 'balance_delta(swap_001)': '900', 'locked(USDC)': '1000000', 'inflight(USDC)': '50000', 'liabilities(USDC)': '900000' },
+    violation: 'Constraint VIOLATED: emitted_amount_matches_delta\nevent_fromAmount(swap_001) = 1000\nbalance_delta(swap_001)   = 900\n\nRelayer will overpay destination by 100 tokens per swap.\nCoverage claim eligible — proof window: 256 blocks.',
+    constraint: 'emitted_amount_matches_delta',
+    timeHorizon: 'now'
+  };
+
+  mockState = demoViolation.mockState;
+  activeViolation = demoViolation;
+  generatedExploits = [demoViolation];
+  renderExploits([demoViolation]);
+
+  document.getElementById('aiStream').innerHTML = `
+    <div style="font-size:11px;line-height:1.8">
+      <div style="color:var(--red);font-weight:600;margin-bottom:10px">⚠ INVARIANT VIOLATED — emitted_amount_matches_delta</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px">
+        <div style="background:var(--surface);border:1px solid rgba(255,58,80,.3);padding:8px 10px">
+          <div style="font-size:8px;color:var(--dim);margin-bottom:4px;letter-spacing:.1em">EVENT EMITS</div>
+          <div style="font-size:20px;color:var(--red);font-weight:600">1,000</div>
+          <div style="font-size:9px;color:var(--dim)">fromAmount — user-supplied</div>
+        </div>
+        <div style="background:var(--surface);border:1px solid rgba(0,255,136,.2);padding:8px 10px">
+          <div style="font-size:8px;color:var(--dim);margin-bottom:4px;letter-spacing:.1em">ACTUAL RECEIVED</div>
+          <div style="font-size:20px;color:var(--green);font-weight:600">900</div>
+          <div style="font-size:9px;color:var(--dim)">balance_delta — correct</div>
+        </div>
+      </div>
+      <div style="background:rgba(255,58,80,.05);border:1px solid rgba(255,58,80,.2);padding:10px 12px;font-size:10px;color:rgba(255,58,80,.8);line-height:1.7;margin-bottom:10px">
+        Relayer trusts the event. Pays destination on 1,000.<br>
+        Bridge received 900. <strong style="color:var(--red)">100 tokens per swap drained.</strong>
+      </div>
+      <div style="font-size:10px;color:var(--dim)">SP1 circuit: 75,831 cycles · proof generated · revealing on-chain...</div>
+    </div>`;
+
+  await new Promise(r => setTimeout(r, 700));
+
+  // 4. Run sim
+  sim(demoViolation);
+  await new Promise(r => setTimeout(r, 800));
+
+  // 5. Finality
+  advanceRail('finality');
+  await new Promise(r => setTimeout(r, 700));
+
+  // 6. Claim
+  advanceRail('claim');
+
+  // Final line
+  const finalLine = document.createElement('div');
+  finalLine.style.cssText = 'background:rgba(0,255,136,.05);border:1px solid rgba(0,255,136,.25);padding:10px 14px;font-size:11px;color:var(--green);margin-top:10px;letter-spacing:.02em;animation:fadeIn .4s ease';
+  finalLine.innerHTML = '✓ Invariant violated. Proof accepted. Claim executable.';
+  document.getElementById('tfList').appendChild(finalLine);
+
+  // Show proof path
+  renderProofPathDemo(demoViolation);
+  setStatus('err', 'Violated — claim eligible');
+
+  // Show reset
+  document.getElementById('resetDemoBtn').style.display = 'block';
+}
+
+// ─── Proof Path panel ────────────────────────────────────────────────────────
+function renderProofPath() {
+  const content = document.getElementById('proofContent');
+  if (activeViolation) {
+    renderProofPathDemo(activeViolation);
+  } else {
+    content.innerHTML = `
+      <div style="color:var(--dim);font-size:11px;text-align:center;padding:30px;line-height:1.8">
+        Run a simulation or the demo first.<br>
+        The proof path shows how a violation travels<br>
+        from ISL spec to on-chain claim.
+      </div>`;
+  }
+}
+
+function renderProofPathDemo(violation) {
+  switchTab('proof');
+  const content = document.getElementById('proofContent');
+
+  const steps = [
+    {
+      num: '01',
+      label: 'Spec',
+      color: 'var(--accent)',
+      title: 'ISL Constraint Committed',
+      detail: `Invariant <span style="color:var(--purple)">${violation.invariant || 'swap_event_integrity'}</span> registered on-chain.\nConstraint hash: <span style="color:var(--dim)">0x3f8c2a1e7b4d9f6c...</span>\nMerkle root committed to InvariantRegistry.`,
+      code: `@constraint ${violation.constraint || 'emitted_amount_matches_delta'}\n  forall swap_id in RECENT_SWAPS(100):\n    event_field(SwapEvent, swap_id, "fromAmount")\n    == balance_delta(swap_id)`
+    },
+    {
+      num: '02',
+      label: 'State Witness',
+      color: 'var(--yellow)',
+      title: 'Protocol State Captured',
+      detail: `Prover fetches live state at block 21,847,203.\nMerkle state commitment built over all monitored variables.\nState root: <span style="color:var(--dim)">0x7c3a9f2e1b4d8c6a...</span>`,
+      code: `event_fromAmount(swap_001) = ${violation.mockState?.['event_fromAmount(swap_001)'] || '1000'}\nbalance_delta(swap_001)   = ${violation.mockState?.['balance_delta(swap_001)'] || '900'}\n\n// Constraint evaluates to FALSE\n// 1000 != 900 → VIOLATION`
+    },
+    {
+      num: '03',
+      label: 'ZK Proof',
+      color: 'var(--purple)',
+      title: 'SP1 Circuit Evaluation',
+      detail: `Constraint evaluated inside SP1 zkVM (RISC-V).\nViolation confirmed: emitted 1000 ≠ received 900.\nProof generated: 75,831 cycles · 18.4s\nCommit hash submitted to EpochManager.`,
+      code: `=== IVP PROOF RESULT ===\nEpoch:      4821\nViolated:   true\nConstraint: emitted_amount_matches_delta\nLHS:        1000 (emitted)\nRHS:        900  (actual)\nCycles:     75,831\nProof size: 4,096 bytes`
+    },
+    {
+      num: '04',
+      label: 'On-Chain',
+      color: 'var(--orange)',
+      title: 'Finality + Dispute Window',
+      detail: `Proof revealed on-chain at block 21,847,118.\nFinality window: 256 blocks (~51 minutes).\nNo valid counter-proof submitted.\nEpoch finalized as VIOLATED at block 21,847,374.`,
+      code: `EpochManager.reveal(\n  epoch: 4821,\n  stateRoot: 0x7c3a9f2e...,\n  violations: 1,\n  proof: 0x...\n)\n// Finality: block 21,847,374`
+    },
+    {
+      num: '05',
+      label: 'Claim',
+      color: 'var(--green)',
+      title: 'Coverage Claim Eligible',
+      detail: `Violation finalized. Claim filed against CoverageVault.\nJunior tranche absorbs first.\nPayout executes within 256 blocks of claim filing.\nNo committee. No vote. Math closes it.`,
+      code: `CoverageVault.fileClaim(\n  epoch: 4821,\n  proofHash: 0x9a7f3c2e...,\n  amount: requestedCoverage\n)\n// → Settled pro-rata\n// → Junior tranche first\n// → Senior if needed`
+    }
+  ];
+
+  content.innerHTML = `
+    <div style="margin-bottom:16px">
+      <div style="font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin-bottom:4px">Proof Lifecycle</div>
+      <div style="font-size:11px;color:var(--text)">How a violation travels from ISL spec to on-chain claim settlement.</div>
+    </div>
+
+    ${steps.map((s, i) => `
+      <div style="display:flex;gap:0;margin-bottom:8px;animation:cardIn .3s ease ${i*.08}s both">
+        <!-- Step indicator -->
+        <div style="width:40px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;padding-top:14px">
+          <div style="width:28px;height:28px;border-radius:2px;background:rgba(255,255,255,.04);border:1px solid ${s.color};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:${s.color}">${s.num}</div>
+          ${i < steps.length - 1 ? `<div style="width:1px;flex:1;background:var(--border);margin-top:4px;min-height:20px"></div>` : ''}
+        </div>
+        <!-- Content -->
+        <div style="flex:1;border:1px solid var(--border);background:var(--surface);margin-left:8px;overflow:hidden;margin-bottom:${i < steps.length-1 ? '0' : '0'}">
+          <div style="padding:10px 14px;display:flex;align-items:center;gap:8px;cursor:pointer;border-bottom:1px solid var(--border)" onclick="var b=this.nextElementSibling;b.style.display=b.style.display==='block'?'none':'block';this.querySelector('.pp-arrow').textContent=b.style.display==='block'?'▴':'▾'">
+            <div style="width:6px;height:6px;border-radius:50%;background:${s.color};flex-shrink:0"></div>
+            <div style="font-size:11px;color:var(--text);font-weight:500;flex:1">${s.title}</div>
+            <div style="font-size:9px;color:${s.color};letter-spacing:.1em;border:1px solid ${s.color}33;padding:1px 6px">${s.label}</div>
+            <div class="pp-arrow" style="font-size:10px;color:var(--dim)">▾</div>
+          </div>
+          <div style="display:${i === 4 ? 'block' : 'none'}">
+            <div style="padding:10px 14px;font-size:10px;color:var(--dim);line-height:1.75;border-bottom:1px solid var(--border)">${s.detail}</div>
+            <div style="padding:10px 14px;background:var(--bg);font-family:var(--mono);font-size:10px;color:${i === 2 && violation?.violation ? 'var(--red)' : 'var(--dim)'};line-height:1.7;white-space:pre">${s.code}</div>
+          </div>
+        </div>
+      </div>`).join('')}
+
+    <div style="margin-top:16px;padding:12px 14px;background:rgba(0,255,136,.04);border:1px solid rgba(0,255,136,.2);font-size:11px;color:var(--green);line-height:1.7">
+      ✓ Proof path complete — violation confirmed, finalized, claim eligible.<br>
+      <span style="font-size:10px;color:rgba(0,255,136,.6)">No committee. No vote. No discretion. Math closes it.</span>
+    </div>`;
+
+  // Auto-open step 3 (the ZK proof — most dramatic)
+  setTimeout(() => {
+    const heads = content.querySelectorAll('[onclick*="classList.toggle"]');
+    if (heads[2]) {
+      heads[2].click();
+    }
+  }, 400);
+}
+
+function togOpt(btn, key) {
+  if (selOpts.has(key)) { selOpts.delete(key); btn.classList.remove('sel'); }
+  else { selOpts.add(key); btn.classList.add('sel'); }
+}
+
+async function hunt() {
+  const spec = document.getElementById('isl-editor').value;
+  const ctx  = document.getElementById('ctxInput').value.trim();
+  const opts = [...selOpts].join(', ');
+
+  setStatus('busy','Hunting...');
+  document.getElementById('huntBtn').disabled = true;
+  document.getElementById('aBtn').disabled = true;
+  document.getElementById('eCount').textContent = 'scanning...';
+  document.getElementById('eCount').className = 'panel-count gen';
+
+  document.getElementById('eList').innerHTML = [1,2,3].map(i =>
+    `<div class="gen-card" style="animation-delay:${i*.1}s">
+      <div class="shimmer" style="width:${60+i*15}%"></div>
+      <div class="shimmer" style="width:${40+i*10}%"></div>
+      <div class="shimmer" style="width:80%"></div>
+    </div>`).join('');
+
+  switchTab('threat');
+  document.getElementById('aiStream').innerHTML = `<div class="thinking"><div class="ai-dots"><span>▪</span><span>▪</span><span>▪</span></div><span style="font-size:10px;letter-spacing:.08em">Analyzing spec</span></div>`;
+
+  const SYS = `You are a senior DeFi security researcher embedded in the Invariant Protocol ISL Playground.
+
+Analyze the ISL invariant spec and any protocol context. Generate structured threat intelligence covering:
+1. PRESENT vulnerabilities the spec misses or under-covers
+2. FORWARD-LOOKING vulnerabilities — bugs that don't exist yet but will emerge as the protocol upgrades, adds composability, scales TVL, or interacts with new DeFi primitives
+3. EXPLOIT CHAINS — how individual findings compound
+
+Focus areas: ${opts}
+
+For each finding output EXACTLY this JSON structure:
+{
+  "id": "unique-slug",
+  "severity": "Critical|High|Medium",
+  "type": "present|future",
+  "name": "Short exploit name (max 8 words)",
+  "desc": "2-3 sentences. Technical. No fluff. Active voice.",
+  "chain": ["Step 1", "Step 2", "Step 3 → Impact"],
+  "mockState": {"stateKey": "maliciousValue"},
+  "violation": "Exact violation message if mocked",
+  "constraint": "constraint_name_if_applicable",
+  "timeHorizon": "now|3months|6months|1year"
+}
+
+Output ONLY valid JSON: {"summary": "2-3 sentence raw threat assessment. No AI tells. Direct.", "findings": [...]}
+Generate 4-6 findings. Mix present and future. Make the future ones genuinely novel — architectural time bombs, not obvious issues.`;
+
+  // Demo mode — realistic pre-computed threat intelligence per template.
+  // Live inference runs behind your own backend. Never expose API keys client-side.
+  // See invariantprotocol.xyz/docs/playground for self-hosted inference setup.
+  await new Promise(r => setTimeout(r, 1400 + Math.random() * 800));
+
+  const DEMO = {
+    lending: {
+      summary: "Spec covers the known governance asymmetry surface but leaves three forward-looking gaps. eMode bitmap desync is encoded — good. Ghost share residual is encoded — good. What's missing: upgrade path invariants for when the configurator gets a new admin, cross-eMode composability when an asset appears in multiple categories simultaneously, and the oracle staleness window is too generous at 300 blocks for assets with thin liquidity. Two of these are present risks, one is a 6-month horizon as protocol governance matures.",
+      findings: [
+        { id: 'upgrade-admin-bypass', severity: 'Critical', type: 'future', name: 'New configurator admin bypasses bitmap invariant', desc: 'When PoolConfigurator admin is rotated via governance, the new admin may call setReserveLtvZero before the IVP invariant is re-registered against the new configurator address. Window of enforcement gap: one epoch minimum.', chain: ['Governance proposes admin rotation', 'IVP invariant still points to old configurator', 'New admin calls setReserveLtvZero — no bitmap update', 'Violation goes undetected for one epoch'], mockState: {'base_ltv(WBTC)':'0','in_collateral_bitmap(WBTC,1)':'true','ltv_zero_bitmap_set(WBTC,1)':'false','configurator_address':'0xNEW_ADMIN'}, violation: 'Constraint VIOLATED: ltv_zero_propagates_to_all_access_paths — base_ltv == 0, in_bitmap == true, bitmap_set == false. New configurator admin bypassed enforcement window.', constraint: 'ltv_zero_propagates_to_all_access_paths', timeHorizon: '3months' },
+        { id: 'multi-emode-collision', severity: 'High', type: 'present', name: 'Asset in multiple eModes with partial bitmap update', desc: 'If an asset appears in eMode category 1 and category 2, setReserveFreeze updates the bitmap for both. setReserveLtvZero updates neither. The spec only checks one eMode per iteration — a forall over emode_id should catch this, but the constraint evaluation may short-circuit on the first satisfied condition.', chain: ['Asset added to eMode 1 and eMode 2', 'setReserveLtvZero called — no bitmap update for either', 'forall constraint evaluates eMode 1 first', 'eMode 2 bypass undetected if eMode 1 check passes incorrectly'], mockState: {'ltv_zero_bitmap_set(WBTC,1)':'true','ltv_zero_bitmap_set(WBTC,2)':'false','in_collateral_bitmap(WBTC,2)':'true','base_ltv(WBTC)':'0'}, violation: 'Constraint VIOLATED: eMode category 2 — ltv_zero_bitmap_set == false while base_ltv == 0 and asset in collateral bitmap.', constraint: 'ltv_zero_propagates_to_all_access_paths', timeHorizon: 'now' },
+        { id: 'oracle-thin-liquidity', severity: 'High', type: 'present', name: 'Oracle staleness window too wide for thin-liquidity assets', desc: '300 blocks (~1 hour) is acceptable for WBTC and ETH. For long-tail assets added via governance proposals, a 300-block stale price window is exploitable via sustained oracle manipulation or simply waiting out low-activity periods.', chain: ['Governance adds long-tail asset with 300-block oracle tolerance', 'Attacker monitors oracle — finds 200-block inactive window', 'Borrows against stale inflated price', 'Oracle updates — position is underwater, liquidations fail'], mockState: {'last_update_block(LONGTAIL)':'21846800','current_block()':'21847203'}, violation: 'Constraint VIOLATED: price_not_stale — current_block (21847203) - last_update (21846800) = 403 > 300 block threshold.', constraint: 'price_not_stale', timeHorizon: 'now' },
+        { id: 'ghost-share-upgrade', severity: 'Critical', type: 'future', name: 'Ghost share residual survives contract upgrade', desc: 'If totalShares is non-zero and totalDebt is zero at the time of a contract upgrade, the new implementation may initialize its accounting from storage without clearing the residual. The ghost share survives the upgrade and infects the new accounting model.', chain: ['Ghost share residual accumulates over time (mulDivDown rounding)', 'Governance proposes contract upgrade', 'New implementation reads totalShares from storage — sees non-zero value', 'First borrower in new implementation receives undervalued shares'], mockState: {'total_shares(STABLE_DEBT)':'3','total_debt(STABLE_DEBT)':'0'}, violation: 'Constraint VIOLATED: no_ghost_shares — total_debt == 0 but total_shares == 3. Residual survives upgrade.', constraint: 'no_ghost_shares', timeHorizon: '6months' }
+      ]
+    },
+    bridge: {
+      summary: "Bridge invariants cover the core balance conservation and event integrity surfaces. The nonce path is solid. Two gaps: finality window exploitation under chain reorg conditions is not covered, and the event integrity constraint only checks fromAmount — a sophisticated attacker could manipulate toAmount on the destination side using a different vector entirely. Forward-looking: as the bridge adds support for new chains, cross-chain composite constraints will need protocol-specific storage slot mappings that the current generic spec doesn't encode.",
+      findings: [
+        { id: 'reorg-double-spend', severity: 'Critical', type: 'present', name: 'Source chain reorg enables bridge double-spend', desc: 'The balance conservation invariant assumes source chain finality. Under a reorg of sufficient depth, a burn on the source chain can be reversed while the destination mint stands. No constraint currently encodes a minimum finality depth requirement.', chain: ['User initiates bridge: burn on source, mint on destination', 'Source chain reorg reverses the burn transaction', 'Destination mint is final and irreversible', 'Attacker now holds tokens on both chains'], mockState: {'burned(nonce_9921)':'0','minted(nonce_9921)':'50000','src_finality_blocks':'2','min_required_finality':'12'}, violation: 'Constraint VIOLATED: burn_before_mint — minted (50000) > 0 but burned == 0 after source chain reorg.', constraint: 'burn_before_mint', timeHorizon: 'now' },
+        { id: 'fot-destination-overpay', severity: 'High', type: 'present', name: 'Fee-on-transfer token overpayment on destination', desc: 'swap_event_integrity correctly checks that emitted fromAmount matches balance_delta. But the destination relayer also uses the toAmount field. If toAmount is calculated based on the overstated fromAmount before the tax is applied, the destination overpayment vector still exists.', chain: ['User swaps 1000 FoT tokens (10% tax)', 'Contract receives 900, emits fromAmount=900 (fixed)', 'toAmount calculated as 900 * rate before tax applied', 'Destination relayer pays out on pre-tax toAmount'], mockState: {'emitted_fromAmount(swap_001)':'900','balance_delta(swap_001)':'900','emitted_toAmount(swap_001)':'945','expected_toAmount':'850'}, violation: 'Constraint gap: toAmount not covered by current invariant. Destination overpayment undetected.', constraint: 'emitted_amount_matches_delta', timeHorizon: 'now' },
+        { id: 'new-chain-slot-mismatch', severity: 'High', type: 'future', name: 'New chain integration with different storage layout', desc: 'As the bridge expands to new EVM chains, storage slot assumptions in cross-chain invariants may not hold. A chain with a different EVM version or a custom precompile may store liabilities in a different slot than the generic cross_field() call expects.', chain: ['Bridge governance approves new chain integration', 'ISL spec uses generic liabilities(USDC) slot mapping', 'New chain stores liabilities in a different slot', 'Balance conservation constraint reads zero — false clean epoch'], mockState: {'liabilities(USDC)':'0','actual_liabilities':'900000'}, violation: 'Constraint reads stale/wrong slot — balance conservation appears satisfied when it is not.', constraint: 'tvl_covers_liabilities', timeHorizon: '6months' }
+      ]
+    },
+    stablecoin: { summary: "Ghost share and collateral ratio invariants are solid. Peg stability band is reasonable. Two gaps: the stability pool solvency constraint doesn't account for the time delay between underwater vault detection and liquidation execution — during high volatility, the pool can be called before it's replenished. Forward-looking: as the protocol adds new collateral types via governance, the CR invariant uses a fixed 150% minimum which may be inappropriate for volatile or illiquid collateral.", findings: [
+      { id: 'liquidation-delay-gap', severity: 'Critical', type: 'present', name: 'Stability pool depleted before liquidation executes', desc: 'Pool solvency constraint checks pool_balance >= total_underwater_debt at epoch boundary. But liquidations execute mid-epoch. During high volatility, the pool can be called repeatedly within one epoch, depleting it before the epoch boundary check fires.', chain: ['Multiple vaults go underwater simultaneously', 'Liquidators drain stability pool across multiple txs', 'Pool balance hits zero mid-epoch', 'Epoch boundary check runs — pool already empty, constraint fires too late'], mockState: {'pool_balance()':'0','total_underwater_debt()':'80000'}, violation: 'Constraint VIOLATED: pool_covers_underwater_debt — pool_balance (0) < total_underwater_debt (80000). Pool depleted mid-epoch.', constraint: 'pool_covers_underwater_debt', timeHorizon: 'now' },
+      { id: 'volatile-collateral-cr', severity: 'High', type: 'future', name: 'Fixed 150% CR floor inappropriate for new collateral types', desc: 'The global CR invariant enforces 150% minimum. Governance can add new collateral types with their own risk parameters. A volatile or illiquid collateral type may require 200%+ CR to be safe — the generic 150% floor creates false assurance.', chain: ['Governance adds volatile token as collateral', 'CR invariant passes at 155% — above generic floor', 'Collateral price drops 40% in one block', 'Effective CR drops to 93% — system underwater'], mockState: {'total_collateral()':'155000','total_debt()':'100000'}, violation: 'Constraint gap: 150% floor satisfied but collateral-specific risk not encoded.', constraint: 'system_overcollateralized', timeHorizon: '3months' }
+    ]},
+    dex: { summary: "Constant product and V3 tick invariants cover the core AMM surfaces. Fee growth monotonicity is a good catch. Two gaps: the k non-decreasing constraint uses LP supply as a proxy for liquidity removal — this is correct but doesn't catch the edge case where LP tokens are minted without actual liquidity addition (a known V2 vulnerability class). Forward-looking: as V3 pools add hooks (EIP-6909), the tick bitmap invariant may be violated by hook-mediated liquidity changes that bypass standard tick crossing logic.", findings: [
+      { id: 'lp-mint-without-liquidity', severity: 'Critical', type: 'present', name: 'LP minted without proportional liquidity addition', desc: 'k non-decreasing constraint uses lp_supply as proxy for liquidity removal. But if LP tokens are minted via a reentrancy vector or a callback manipulation, lp_supply increases while k stays the same — constraint passes but the pool is diluted.', chain: ['Attacker calls mint() with reentrancy callback', 'LP tokens minted before liquidity deposited', 'lp_supply increases — constraint sees no removal', 'k stays same — constraint passes', 'Attacker redeems LP tokens against diluted pool'], mockState: {'reserve0(ETH_USDC)':'1000','reserve1(ETH_USDC)':'2000000','lp_supply(ETH_USDC)':'2000000','prev_lp_supply(ETH_USDC)':'1414213'}, violation: 'Constraint gap: lp_supply increased without proportional k increase. Dilution attack undetected.', constraint: 'k_non_decreasing_without_removal', timeHorizon: 'now' },
+      { id: 'hook-tick-bypass', severity: 'High', type: 'future', name: 'V3 hooks bypass tick bitmap invariant', desc: 'As Uniswap V4-style hooks are added, hook callbacks can modify liquidity at specific ticks without going through standard tick crossing. The bitmap invariant assumes all tick modifications go through the standard path.', chain: ['V3 pool adds hook support via governance upgrade', 'Hook modifies tick liquidity in beforeSwap callback', 'Tick bitmap not updated by hook', 'Invariant checks bitmap — sees mismatch with actual liquidity'], mockState: {'active_liquidity(POOL)':'5000000','sum_in_range_liquidity(POOL)':'4800000'}, violation: 'Constraint VIOLATED: active_liquidity_matches_positions — abs_diff (200000) > 1. Hook-mediated liquidity change bypassed bitmap.', constraint: 'active_liquidity_matches_positions', timeHorizon: '6months' }
+    ]},
+    governance: { summary: "Timelock and voting snapshot invariants are well-specified. State machine coverage is solid. One present gap: the ETA constraint checks execution_block >= eta but doesn't account for the grace period window — proposals can technically be executed up to GRACE_PERIOD blocks after expiry, which the constraint treats as a violation even when it's valid. Forward-looking: as DAOs adopt optimistic governance (default pass, veto window), the defeated_stays_defeated constraint will need to handle the new terminal state where proposals expire without being explicitly defeated.", findings: [
+      { id: 'grace-period-false-positive', severity: 'Medium', type: 'present', name: 'Grace period window triggers false violation', desc: 'Timelock execution has a grace period after ETA — typically 14 days. Proposals executed within the grace period are valid but appear to violate the eta constraint if grace period is not accounted for. Results in false positive violation alerts.', chain: ['Proposal queued with ETA at block 18600000', 'Grace period: 18600000 to 18700000', 'Proposal executed at block 18650000', 'Constraint checks executed_block >= eta — passes', 'But grace period logic not in constraint — may mismatch on edge cases'], mockState: {'executed_block(tx_001)':'18650000','eta(tx_001)':'18600000','grace_period_end':'18700000'}, violation: 'Constraint gap: grace period not encoded. Edge case: execution at eta boundary may be flagged incorrectly.', constraint: 'execution_respects_eta', timeHorizon: 'now' },
+      { id: 'optimistic-gov-state', severity: 'High', type: 'future', name: 'Optimistic governance breaks defeated_stays_defeated', desc: 'As protocols adopt optimistic governance (proposals pass by default after veto window), the defeated state is replaced by expired. The state machine invariant expects DEFEATED as a terminal state — optimistic governance introduces EXPIRED which has different semantics and may allow re-proposal.', chain: ['Protocol adopts optimistic governance via upgrade', 'Proposal expires without veto — transitions to EXPIRED not DEFEATED', 'defeated_stays_defeated constraint does not cover EXPIRED', 'Attacker re-proposes defeated logic under new state machine'], mockState: {'state(prop_17)':'EXPIRED','prev_state(prop_17)':'ACTIVE'}, violation: 'Constraint gap: EXPIRED state not covered. Optimistic governance upgrade invalidates state machine invariant.', constraint: 'defeated_stays_defeated', timeHorizon: '3months' }
+    ]},
+    blank: { summary: "Spec is minimal. No exploit surface to analyze yet. Add invariants with forall, implies, and cross-protocol field reads to surface relevant threat classes.", findings: [] }
+  };
+
+  const result = DEMO[cur] || DEMO.blank;
+  renderThreatIntel(result);
+  buildCards(result.findings || []);
+  setStatus('ok', `${result.findings.length} exploits found`);
+
+  document.getElementById('huntBtn').disabled = false;
+  document.getElementById('aBtn').disabled = false;
+}
+
+function renderThreatIntel(data) {
+  document.getElementById('aiStream').innerHTML = `<div style="white-space:pre-wrap;font-size:11px;color:var(--dim);line-height:1.75">${(data.summary||'').replace(/CRITICAL/gi,'<span style="color:var(--red);font-weight:600">CRITICAL</span>').replace(/HIGH/gi,'<span style="color:var(--orange)">HIGH</span>').replace(/MEDIUM/gi,'<span style="color:var(--yellow)">MEDIUM</span>')}</div>`;
+
+  const list = document.getElementById('tfList');
+  if (!data.findings?.length) { list.innerHTML = ''; return; }
+
+  list.innerHTML = data.findings.map((f,i) => {
+    const icls = f.severity==='Critical' ? 'tc' : f.severity==='High' ? 'th' : 'tm';
+    const icon = f.severity==='Critical' ? '💀' : f.severity==='High' ? '⚠' : '◈';
+    const isFut = f.type==='future' || f.timeHorizon !== 'now';
+    const msStr = JSON.stringify(f).replace(/"/g,'&quot;');
+    return `<div class="tf" style="animation-delay:${i*.07}s">
+      <div class="tf-head" onclick="this.nextElementSibling.classList.toggle('open')">
+        <div class="ti ${icls}">${icon}</div>
+        <div class="tf-name">${f.name}</div>
+        ${isFut ? `<div class="tf-fut">+${f.timeHorizon||'future'}</div>` : ''}
+      </div>
+      <div class="tf-body">
+        <div style="margin-bottom:8px;font-size:10px;color:var(--dim);line-height:1.7">${f.desc||''}</div>
+        ${f.chain?.length ? `<div class="tf-chain">${f.chain.map((s,j)=>`<span style="color:var(--text)">${j+1}. ${s}</span>${j<f.chain.length-1?'\n<span style="color:var(--dim)"> →</span>\n':''}`).join('')}</div>` : ''}
+        ${f.mockState ? `<button class="inject-btn" onclick="inject(${msStr})">Inject into simulation</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function inject(f) {
+  mockState = f.mockState || {}; activeViolation = f;
+  switchTab('state'); renderState(mockState);
+  setTimeout(() => sim(f), 350);
+}
+
+function buildCards(findings) {
+  generatedExploits = findings; renderExploits(findings);
+}
+
+function renderExploits(exploits) {
+  const list = document.getElementById('eList');
+  const count = document.getElementById('eCount');
+  count.className = 'panel-count';
+  count.textContent = exploits.length ? `${exploits.length} found` : '0 found';
+
+  if (!exploits.length) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">⬡</div><div class="empty-text">Hit <strong style="color:var(--purple)">Analyze Spec</strong><br>to analyze your spec.</div></div>`;
+    return;
+  }
+
+  const cm = { Critical:'#FF3A50', High:'#FF6B35', Medium:'#FFB800' };
+  list.innerHTML = exploits.map((ex,i) => {
+    const color = cm[ex.severity]||'#4A5A70';
+    const isFut = ex.type==='future' || ex.timeHorizon !== 'now';
+    const msStr = JSON.stringify(ex).replace(/"/g,'&quot;');
+    return `<div class="exploit-card ${isFut?'ai-generated':''}" id="ec-${ex.id}"
+               style="--sev-color:${color};animation-delay:${i*.06}s" onclick="selCard('${ex.id}')">
+      <div class="exploit-sev">${ex.severity}${isFut?' · FUTURE':''}</div>
+      <div class="exploit-name">${ex.name}</div>
+      <div class="exploit-desc">${(ex.desc||'').substring(0,110)}${(ex.desc||'').length>110?'...':''}</div>
+      <div class="exploit-footer">
+        <span>${ex.timeHorizon==='now'?'Present':'~'+ex.timeHorizon}</span>
+        ${ex.mockState?`<button class="mock-btn" id="mb-${ex.id}" onclick="event.stopPropagation();mockCard(${msStr})">⚡ Mock</button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function selCard(id) {
+  document.querySelectorAll('.exploit-card').forEach(c => c.classList.remove('active'));
+  document.getElementById(`ec-${id}`)?.classList.add('active');
+}
+
+function mockCard(ex) {
+  mockActive = ex.id;
+  document.querySelectorAll('.mock-btn').forEach(b => { b.textContent='⚡ Mock'; b.classList.remove('active'); });
+  document.querySelectorAll('.exploit-card').forEach(c => c.classList.remove('mocking'));
+  const mb = document.getElementById(`mb-${ex.id}`);
+  if (mb) { mb.textContent='● Mocking'; mb.classList.add('active'); }
+  document.getElementById(`ec-${ex.id}`)?.classList.add('mocking');
+  mockState = ex.mockState || {}; activeViolation = ex;
+  switchTab('state'); renderState(mockState);
+  setTimeout(() => sim(ex), 350);
+}
+
+function renderState(overrides = {}) {
+  const base = DEF_STATE[cur] || {};
+  const merged = { ...base, ...overrides };
+  const okeys = Object.keys(overrides);
+  document.getElementById('stateContent').innerHTML = `
+    ${okeys.length ? '<div class="mock-banner">⚡ Mock active — amber values injected</div>' : ''}
+    <div style="margin-bottom:16px">
+      <div class="sect-title">Protocol State</div>
+      ${Object.entries(merged).map(([k,v]) => {
+        const isMock = okeys.includes(k);
+        return `<div class="sv ${isMock?'mocked':''}">
+          <div class="sv-name"><span>${k.split('(')[0]}</span>${k.includes('(')?'('+k.split('(').slice(1).join('('):''}</div>
+          <input class="sv-input ${isMock?'mocked':''}" value="${v}">
+          <div class="sv-badge ${isMock?'b-mock':'b-dim'}">${isMock?'MOCK':'—'}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+function sim(exploit = null) {
+  const btn = document.getElementById('runBtn');
+  btn.textContent = '⟳ Running'; btn.disabled = true;
+  setStatus('busy','Proving...');
+  const spec = document.getElementById('isl-editor').value;
+  const constraints = [...spec.matchAll(/@constraint\s+(\w+)/g)].map(m => m[1]);
+
+  setTimeout(() => {
+    btn.textContent = '▶ Run'; btn.disabled = false;
+    switchTab('results');
+    if (exploit?.violation) { renderViolation(exploit, constraints); setStatus('err','Violated'); }
+    else { renderClean(constraints); setStatus('ok','Clean'); }
+  }, 500 + Math.random()*400);
+}
+
+function renderViolation(exploit, constraints) {
+  document.getElementById('resContent').innerHTML = `
+    <div class="va"><div class="va-icon">⚠</div><div><div class="va-title">INVARIANT VIOLATION DETECTED</div><div class="va-detail">${exploit.violation||'Constraint not satisfied under mocked state.'}</div></div></div>
+    ${constraints.map((c,i) => {
+      const isV = c === exploit.constraint;
+      return `<div class="cr" style="animation-delay:${i*.06}s">
+        <div class="cr-head" onclick="this.nextElementSibling.classList.toggle('open')">
+          <div class="ci ${isV?'ci-fail':'ci-ok'}">${isV?'✗':'✓'}</div>
+          <div class="cr-name">${c}</div>
+          <div class="cr-cyc">${(Math.random()*80000+20000|0).toLocaleString()} cycles</div>
+        </div>
+        <div class="cr-body${isV?' open':''}">
+          ${isV && exploit.mockState ? Object.entries(exploit.mockState).map(([k,v])=>`<div>${k}: <span style="color:var(--red)">${v}</span></div>`).join('') : '<div style="color:var(--green)">All values within bounds</div>'}
+          <div style="margin-top:6px;color:${isV?'var(--red)':'var(--green)'}">→ ${isV?'VIOLATED':'SATISFIED'}</div>
+        </div>
+      </div>`;
+    }).join('')}`;
+}
+
+function renderClean(constraints) {
+  document.getElementById('resContent').innerHTML = `
+    <div class="clean-banner"><span>✓</span><span>All ${constraints.length} constraints satisfied — epoch clean</span></div>
+    ${constraints.map((c,i)=>`<div class="cr" style="animation-delay:${i*.05}s">
+      <div class="cr-head" onclick="this.nextElementSibling.classList.toggle('open')">
+        <div class="ci ci-ok">✓</div><div class="cr-name">${c}</div>
+        <div class="cr-cyc">${(Math.random()*80000+20000|0).toLocaleString()} cycles</div>
+      </div>
+      <div class="cr-body"><div style="color:var(--green)">SATISFIED</div></div>
+    </div>`).join('')}`;
+}
+
+function setStatus(type, text) {
+  document.getElementById('sPill').className = `status-pill ${type}`;
+  document.getElementById('sDot').className = `status-dot${type==='busy'?' pulse':''}`;
+  document.getElementById('sTxt').textContent = text;
+}
+
+function startEpoch() {
+  let block = 21847203, prog = 0;
+  setInterval(() => {
+    block++; prog = (prog + 2) % 100;
+    if (!prog) epoch++;
+    document.getElementById('epochLbl').textContent = `EPOCH ${epoch.toLocaleString()}`;
+    document.getElementById('eNum').textContent = `Epoch ${epoch.toLocaleString()}`;
+    document.getElementById('bNum').textContent = `Block ${block.toLocaleString()}`;
+    document.getElementById('eFill').style.width = `${prog}%`;
+  }, 120);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Invariant Protocol — Are your security assumptions still true right now?</title>
+<meta name="description" content="Programmable runtime invariant verification with optional Guardian enforcement hooks. IVP proves your security assumptions continuously — and acts when they fail.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@300;400;500&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink:      #0A0C0F;
+  --paper:    #F5F2ED;
+  --warm:     #EDE9E2;
+  --border:   #D8D3CB;
+  --dim:      #8C8880;
+  --accent:   #0A0C0F;
+  --red:      #C0392B;
+  --mono:     'IBM Plex Mono', monospace;
+  --serif:    'Instrument Serif', Georgia, serif;
+  --sans:     'Syne', sans-serif;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Nav ── */
+nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  padding: 0 48px;
+  height: 56px;
+  background: var(--paper);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-logo {
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.nav-logo span {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--dim);
+  letter-spacing: 0.1em;
+  margin-left: 10px;
+  text-transform: uppercase;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  margin-left: auto;
+  list-style: none;
+}
+
+.nav-links a {
+  font-size: 12px;
+  color: var(--dim);
+  text-decoration: none;
+  letter-spacing: 0.04em;
+  transition: color 0.15s;
+}
+
+.nav-links a:hover { color: var(--ink); }
+
+.nav-cta {
+  background: var(--ink) !important;
+  color: var(--paper) !important;
+  padding: 7px 16px;
+  font-size: 11px !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase;
+}
+
+/* ── Hero ── */
+.hero {
+  padding: 160px 48px 100px;
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: 80px;
+  align-items: start;
+}
+
+.hero-eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin-bottom: 28px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hero-eyebrow::before {
+  content: '';
+  width: 32px;
+  height: 1px;
+  background: var(--dim);
+}
+
+.hero-headline {
+  font-family: var(--serif);
+  font-size: clamp(42px, 5vw, 64px);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin-bottom: 32px;
+}
+
+.hero-headline em {
+  font-style: italic;
+  color: var(--dim);
+}
+
+.hero-body {
+  font-size: 15px;
+  color: var(--dim);
+  line-height: 1.8;
+  max-width: 520px;
+  margin-bottom: 48px;
+  font-family: var(--mono);
+}
+
+.hero-body strong { color: var(--ink); font-weight: 500; }
+
+.hero-actions {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+.btn-primary {
+  background: var(--ink);
+  color: var(--paper);
+  padding: 12px 24px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  display: inline-block;
+}
+
+.btn-primary:hover { opacity: 0.85; }
+
+.btn-ghost {
+  color: var(--dim);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 2px;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.btn-ghost:hover { color: var(--ink); border-color: var(--ink); }
+
+/* Hero right — stat block */
+.hero-stats {
+  padding-top: 80px;
+}
+
+.stat-block {
+  border-top: 1px solid var(--border);
+  padding: 20px 0;
+}
+
+.stat-block:last-child { border-bottom: 1px solid var(--border); }
+
+.stat-num {
+  font-family: var(--serif);
+  font-size: 36px;
+  color: var(--ink);
+  letter-spacing: -0.03em;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-size: 11px;
+  color: var(--dim);
+  letter-spacing: 0.06em;
+}
+
+/* ── Divider ── */
+.full-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 0;
+}
+
+/* ── Section ── */
+.section {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 80px 48px;
+}
+
+.section-label {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin-bottom: 48px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.section-label::before {
+  content: '';
+  width: 24px;
+  height: 1px;
+  background: var(--dim);
+}
+
+/* ── Findings ── */
+.findings-intro {
+  font-family: var(--serif);
+  font-size: 28px;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  max-width: 700px;
+  margin-bottom: 60px;
+}
+
+.finding {
+  border-top: 1px solid var(--border);
+  padding: 40px 0;
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 48px;
+}
+
+.finding:last-child { border-bottom: 1px solid var(--border); }
+
+.finding-meta { padding-top: 4px; }
+
+.finding-id {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin-bottom: 8px;
+}
+
+.finding-protocol {
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+
+.finding-severity {
+  display: inline-block;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  background: #FEF0EF;
+  color: var(--red);
+  border: 1px solid rgba(192,57,43,0.2);
+}
+
+.finding-severity.medium {
+  background: #FFF8E8;
+  color: #8A6000;
+  border-color: rgba(138,96,0,0.2);
+}
+
+.finding-body {}
+
+.finding-title {
+  font-family: var(--serif);
+  font-size: 22px;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  margin-bottom: 14px;
+  line-height: 1.3;
+}
+
+.finding-desc {
+  font-size: 13px;
+  color: var(--dim);
+  line-height: 1.8;
+  margin-bottom: 20px;
+  max-width: 620px;
+}
+
+.finding-desc strong { color: var(--ink); font-weight: 500; }
+
+.finding-code {
+  background: var(--warm);
+  border: 1px solid var(--border);
+  padding: 16px 20px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--dim);
+  line-height: 1.7;
+  max-width: 620px;
+  overflow-x: auto;
+}
+
+.finding-code .hl { color: var(--ink); font-weight: 500; }
+.finding-code .comment { color: var(--border); }
+
+.finding-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: var(--dim);
+  letter-spacing: 0.06em;
+  margin-top: 16px;
+}
+
+.finding-tag::before {
+  content: '';
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--dim);
+}
+
+/* ── How it works ── */
+.how-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  border: 1px solid var(--border);
+}
+
+.how-cell {
+  padding: 32px 28px;
+  border-right: 1px solid var(--border);
+  position: relative;
+}
+
+.how-cell:last-child { border-right: none; }
+
+.how-num {
+  font-family: var(--serif);
+  font-size: 48px;
+  color: var(--border);
+  line-height: 1;
+  margin-bottom: 20px;
+  letter-spacing: -0.04em;
+}
+
+.how-title {
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 10px;
+  letter-spacing: -0.01em;
+}
+
+.how-body {
+  font-size: 12px;
+  color: var(--dim);
+  line-height: 1.7;
+}
+
+/* ── Architecture ── */
+.arch-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  align-items: start;
+}
+
+.arch-title {
+  font-family: var(--serif);
+  font-size: 28px;
+  letter-spacing: -0.01em;
+  margin-bottom: 32px;
+  line-height: 1.2;
+}
+
+.arch-principle {
+  border-top: 1px solid var(--border);
+  padding: 24px 0;
+}
+
+.arch-principle-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink);
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+}
+
+.arch-principle-body {
+  font-size: 12px;
+  color: var(--dim);
+  line-height: 1.75;
+}
+
+.arch-principle-body strong { color: var(--ink); font-weight: 500; }
+
+.code-block {
+  background: var(--ink);
+  color: #8BAD8A;
+  padding: 28px 32px;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.8;
+  overflow-x: auto;
+}
+
+.code-block .comment { color: #4A5A48; }
+.code-block .keyword { color: #7EC8E3; }
+.code-block .string  { color: #C5A46E; }
+.code-block .fn      { color: #D4A8FF; }
+.code-block .dim     { color: #4A5A48; }
+
+/* ── Narrative ── */
+.narrative {
+  background: var(--ink);
+  color: var(--paper);
+  padding: 100px 48px;
+}
+
+.narrative-inner {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.narrative-title {
+  font-family: var(--serif);
+  font-size: clamp(32px, 4vw, 52px);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin-bottom: 40px;
+}
+
+.narrative-title em { font-style: italic; opacity: 0.5; }
+
+.narrative-body {
+  font-size: 14px;
+  color: rgba(245,242,237,0.6);
+  line-height: 1.85;
+  margin-bottom: 24px;
+}
+
+.narrative-body strong { color: var(--paper); font-weight: 500; }
+
+.narrative-rule {
+  width: 48px;
+  height: 1px;
+  background: rgba(245,242,237,0.2);
+  margin: 40px 0;
+}
+
+/* ── Status ── */
+.status-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  align-items: start;
+}
+
+.status-list { list-style: none; }
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.status-item:first-child { border-top: 1px solid var(--border); }
+
+.status-check {
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.status-check.done { color: var(--ink); font-size: 12px; }
+.status-check.todo { border: 1px solid var(--border); }
+
+.status-text { color: var(--ink); }
+.status-text.todo { color: var(--dim); }
+
+.open-problems {
+  background: var(--warm);
+  border: 1px solid var(--border);
+  padding: 32px;
+}
+
+.open-problems-title {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin-bottom: 20px;
+}
+
+.problem {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.problem:last-child { border-bottom: none; }
+
+.problem-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+
+.problem-body {
+  font-size: 12px;
+  color: var(--dim);
+  line-height: 1.7;
+}
+
+/* ── Footer ── */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 40px 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.footer-left {
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.footer-center {
+  font-size: 11px;
+  color: var(--dim);
+  letter-spacing: 0.04em;
+}
+
+.footer-right {
+  font-size: 11px;
+  color: var(--dim);
+}
+
+/* ── Animations ── */
+.fade-up {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.fade-up.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  nav { padding: 0 24px; }
+  .hero { grid-template-columns: 1fr; gap: 40px; padding: 120px 24px 60px; }
+  .hero-stats { padding-top: 0; }
+  .section { padding: 60px 24px; }
+  .finding { grid-template-columns: 1fr; gap: 20px; }
+  .how-grid { grid-template-columns: 1fr 1fr; }
+  .arch-grid { grid-template-columns: 1fr; }
+  .status-grid { grid-template-columns: 1fr; }
+  footer { flex-direction: column; gap: 16px; text-align: center; padding: 32px 24px; }
+  .narrative { padding: 60px 24px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <a href="#" class="nav-logo">
+    Invariant Protocol
+    <span>IVP</span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#findings">Exploit classes</a></li>
+    <li><a href="#how">How it works</a></li>
+    <li><a href="#architecture">Architecture</a></li>
+    <li><a href="#status">Status</a></li>
+    <li><a href="https://github.com/adam-ivp/invariant-protocol" class="nav-cta">GitHub →</a></li>
+  </ul>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div>
+    <div class="hero-eyebrow">Invariant Protocol</div>
+    <h1 class="hero-headline">
+      Invariant-based<br>
+      circuit breakers<br>
+      <em>for DeFi.</em>
+    </h1>
+    <p class="hero-body">
+      Audits validate assumptions at deployment. Nothing enforces them after.<br><br>
+      <strong>IVP does.</strong> Protocols specify invariants in ISL. A ZK prover network verifies them against live state every epoch. A property breaks — proof on-chain, Guardian fires, the drain gets intercepted before completion.<br><br>
+      Runtime invariant monitoring with on-chain enforcement hooks.
+    </p>
+    <div class="hero-actions">
+      <a href="#comparison" class="btn-primary">See how it differs →</a>
+      <a href="https://github.com/adam-ivp/invariant-protocol" class="btn-ghost">GitHub</a>
+    </div>
+  </div>
+
+  <div class="hero-stats">
+    <div class="stat-block">
+      <div class="stat-num">ISL</div>
+      <div class="stat-label">Formal constraint language — the center of gravity</div>
+    </div>
+    <div class="stat-block">
+      <div class="stat-num">36</div>
+      <div class="stat-label">Invariants across 5 protocol categories</div>
+    </div>
+    <div class="stat-block">
+      <div class="stat-num">3</div>
+      <div class="stat-label">Recurring exploit classes encoded and enforced</div>
+    </div>
+    <div class="stat-block">
+      <div class="stat-num">$B+</div>
+      <div class="stat-label">TVL across active finding targets</div>
+    </div>
+  </div>
+</section>
+
+<div class="full-divider"></div>
+
+<!-- Findings -->
+<section class="section" id="findings">
+  <div class="section-label">Why this exists</div>
+
+  <p class="findings-intro fade-up">
+    The invariant library is a living catalogue of DeFi failure modes. Every entry is grounded in a real bug — found, documented, and encoded as a formally verifiable constraint. Three patterns appear repeatedly across every protocol category.
+  </p>
+
+  <!-- Pattern 1 -->
+  <div class="finding fade-up">
+    <div class="finding-meta">
+      <div class="finding-id">Pattern 01</div>
+      <div class="finding-protocol">Lending Protocols</div>
+      <div class="finding-severity medium">Governance asymmetry</div>
+    </div>
+    <div class="finding-body">
+      <div class="finding-title">Two functions, same intent, divergent side effects</div>
+      <p class="finding-desc">
+        The most reliable finding surface in DeFi: <strong>two governance or accounting functions that should be equivalent but aren't.</strong> One updates a critical bitmap, mapping, or accumulator. The other doesn't. The discrepancy is invisible at the call site. It surfaces in edge cases — eMode users, isolated positions, frozen assets — where the missing update silently bypasses the intended restriction. Governance acts to reduce risk. The protocol continues as if it didn't.
+      </p>
+      <div class="finding-code">
+<span class="comment">// Function A — updates enforcement bitmap ✓</span>
+<span class="hl">function restrictAsset(address asset)</span>
+  currentConfig.setLtv(0);
+  <span class="hl">_updateEnforcementBitmap(asset);</span>  <span class="comment">// propagates to all access paths</span>
+
+<span class="comment">// Function B — same stated intent, missing propagation ✗</span>
+<span class="hl">function zeroAssetLtv(address asset)</span>
+  currentConfig.setLtv(0);
+  <span class="comment">// bitmap never updated</span>
+  <span class="comment">// edge case users unaffected — restriction silently bypassed</span>
+      </div>
+      <div class="finding-tag">Active findings in this category · IVP invariant: emode_ltv_consistency</div>
+    </div>
+  </div>
+
+  <!-- Pattern 2 -->
+  <div class="finding fade-up">
+    <div class="finding-meta">
+      <div class="finding-id">Pattern 02</div>
+      <div class="finding-protocol">Stablecoin CDPs</div>
+      <div class="finding-severity">Incomplete fix propagation</div>
+    </div>
+    <div class="finding-body">
+      <div class="finding-title">Patch applied to one mirrored path. Not the other.</div>
+      <p class="finding-desc">
+        When a codebase has structurally mirrored execution paths — free/paid, stable/variable, normal/emergency — a fix to one path leaves an identical vulnerability in its mirror. <strong>The ghost share pattern:</strong> after a full repayment, rounding leaves total debt at zero while total shares stays non-zero. The next borrower enters the wrong branch, gets undervalued shares, and existing shareholders extract value at their expense. Triggers through normal usage. No attack required.
+      </p>
+      <div class="finding-code">
+<span class="comment">// Path A — FIXED</span>
+if (totalSharesA == 0 <span class="hl">|| totalDebtA == 0</span>) {
+  shares = debt;  <span class="comment">// 1:1 on fresh start</span>
+}
+
+<span class="comment">// Path B — NOT FIXED (structural mirror) ✗</span>
+if (totalSharesB == 0) {  <span class="comment">// missing: || totalDebtB == 0</span>
+  shares = debt;
+} else {
+  <span class="hl">shares = mulDivDown(debt, totalSharesB, totalDebtB);</span>
+  <span class="comment">// totalDebtB == 0, totalSharesB > 0 → ghost share extraction</span>
+}
+      </div>
+      <div class="finding-tag">Active findings in this category · IVP invariant: debt_share_accounting</div>
+    </div>
+  </div>
+
+  <!-- Pattern 3 -->
+  <div class="finding fade-up">
+    <div class="finding-meta">
+      <div class="finding-id">Pattern 03</div>
+      <div class="finding-protocol">Bridge Protocols</div>
+      <div class="finding-severity">Event integrity divergence</div>
+    </div>
+    <div class="finding-body">
+      <div class="finding-title">Contract computes the right value. Event emits the wrong one.</div>
+      <p class="finding-desc">
+        Bridge relayers on destination chains use emitted events as the source of truth for settlement. <strong>When a swap contract correctly computes received tokens via balance delta but emits the user-supplied input amount instead</strong>, fee-on-transfer tokens produce a systematic divergence. The relayer sees an overstated amount and pays out accordingly. The difference comes from the bridge. PoC verified on mainnet fork.
+      </p>
+      <div class="finding-code">
+<span class="comment">// Correct: balance delta captures actual received</span>
+uint256 received = token.balanceOf(address(this)) - balanceBefore;
+
+<span class="comment">// Wrong: event emits user-supplied amount, not received ✗</span>
+<span class="hl">emit Swap(fromToken, toToken, fromAmount, ...);</span>
+<span class="comment">//                             ^^^^^^^^^^ user-supplied</span>
+<span class="comment">// for fee-on-transfer tokens: fromAmount > received</span>
+<span class="comment">// relayer overpays — difference sourced from bridge liquidity</span>
+      </div>
+      <div class="finding-tag">Active findings in this category · IVP invariant: swap_event_integrity</div>
+    </div>
+  </div>
+
+</section>
+
+<div class="full-divider"></div>
+
+<!-- How it works -->
+<section class="section" id="how">
+  <div class="section-label">Mechanism</div>
+
+  <div class="how-grid fade-up">
+    <div class="how-cell">
+      <div class="how-num">01</div>
+      <div class="how-title">Specify</div>
+      <p class="how-body">Protocol teams write invariants in ISL — a typed formal constraint language. Each spec is committed on-chain as a hash. The scope of coverage is exactly what's signed. Nothing implied.</p>
+    </div>
+    <div class="how-cell">
+      <div class="how-num">02</div>
+      <div class="how-title">Prove</div>
+      <p class="how-body">An assigned prover fetches live state, Merkle-commits the snapshot, and runs the SP1 ZK circuit against all active invariants. Commit-reveal prevents front-running. Batch proofs cover N epochs atomically.</p>
+    </div>
+    <div class="how-cell">
+      <div class="how-num">03</div>
+      <div class="how-title">Verify</div>
+      <p class="how-body">256-block finality window. Bonded dispute mechanism — disputer posts IVP, loses bond on failed dispute. SpotChecker fires on random epochs: a second prover re-proves independently, without knowing they're being checked.</p>
+    </div>
+    <div class="how-cell">
+      <div class="how-num">04</div>
+      <div class="how-title">Settle</div>
+      <p class="how-body">Violation proven and finalized. Claim filed. Junior tranche absorbs first, senior if needed. Pro-rata distribution. No vote. No committee. The math settles it.</p>
+    </div>
+  </div>
+</section>
+
+<div class="full-divider"></div>
+
+<!-- Architecture -->
+<section class="section" id="architecture">
+  <div class="section-label">Design</div>
+
+  <div class="arch-grid">
+    <div>
+      <h2 class="arch-title">ISL is the interface. Everything else is downstream.</h2>
+
+      <div class="arch-principle fade-up">
+        <div class="arch-principle-title">ISL — the center of gravity</div>
+        <p class="arch-principle-body">The ZK circuit, the prover network, and the coverage vaults all enforce what gets written in ISL. If auditors encode exploit classes in ISL, if researchers publish shared specs, if protocols fork the library — ISL becomes a standards layer. <strong>That's where protocol moats form.</strong> A shared invariant spec for lending solvency, written once and adopted across a category, is more valuable than any individual contract.</p>
+      </div>
+
+      <div class="arch-principle fade-up">
+        <div class="arch-principle-title">Semantic honesty</div>
+        <p class="arch-principle-body">The hardest problem in invariant systems is not the ZK. It's proving <em>the invariant was the correct invariant.</em> IVP does not solve this — no system can. <strong>Coverage means specified properties held.</strong> The protocol team owns spec completeness. IVP enforces what is committed, completely and continuously.</p>
+      </div>
+
+      <div class="arch-principle fade-up">
+        <div class="arch-principle-title">Adversary-designed</div>
+        <p class="arch-principle-body">Liveness recovery prevents a silent prover from halting the system. Bonded disputes prevent griefing. Proof size caps bound verifier gas. Anti-Sybil cooldowns. Dispute limits. The SpotChecker's rotating private seed makes check epochs unpredictable — hidden checker identity, commit-reveal, collusion cost amplification.</p>
+      </div>
+
+      <div class="arch-principle fade-up">
+        <div class="arch-principle-title">The unsolved economic problem</div>
+        <p class="arch-principle-body">Slash amounts are finite. Exploit concealment value is not. For large protocols, off-chain bribery can economically dominate any slash. The current model — tiered slashing, SpotChecker, anomaly tracking — is the defense at this stage. The full solution requires <strong>watchdog markets, public replay bounties, and forced proof redundancy.</strong> This is the active research direction. We say this out loud.</p>
+      </div>
+    </div>
+
+    <div class="fade-up">
+      <div class="code-block">
+<span class="comment">// ISL — Invariant Specification Language</span>
+<span class="comment">// Lending: governance asymmetry invariant</span>
+
+<span class="keyword">@invariant</span> ltv_enforcement_consistency
+<span class="keyword">@severity</span>  Solvency
+<span class="keyword">@protocol</span>  pool, configurator
+
+  <span class="keyword">@constraint</span> ltv_zero_propagates_to_all_paths
+    <span class="fn">forall</span> asset <span class="keyword">in</span> ACTIVE_ASSETS:
+      <span class="fn">forall</span> emode_id <span class="keyword">in</span> ACTIVE_EMODE_CATEGORIES:
+        <span class="fn">implies</span>(
+          <span class="fn">and</span>(base_ltv(asset) == 0,
+              in_collateral_bitmap(asset, emode_id)),
+          ltv_zero_bitmap_set(asset, emode_id)
+        )
+
+  <span class="keyword">@constraint</span> frozen_asset_effective_ltv_zero
+    <span class="fn">forall</span> asset <span class="keyword">in</span> FROZEN_ASSETS:
+      <span class="fn">forall</span> emode_id <span class="keyword">in</span> ACTIVE_EMODE_CATEGORIES:
+        effective_ltv(asset, emode_id) == 0
+
+
+<span class="comment">// SDK — three lines to integrate</span>
+<span class="keyword">const</span> { id } = <span class="keyword">await</span> ivp.<span class="fn">register</span>({
+  protocolAddress: <span class="string">"0x..."</span>,
+  vaultAddress:    <span class="string">"0x..."</span>,
+  spec:            <span class="string">"./lending.isl"</span>,
+});
+<span class="keyword">await</span> ivp.<span class="fn">activate</span>(id);
+<span class="dim">// enforcement begins next epoch</span>
+      </div>
+
+      <div style="margin-top:16px;padding:20px 24px;background:var(--warm);border:1px solid var(--border)">
+        <div style="font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:12px">Open problems — named honestly</div>
+        <p style="font-size:12px;color:var(--dim);line-height:1.75;margin-bottom:10px"><strong style="color:var(--ink)">Slash vs bribery ceiling.</strong> Finite slash amounts cannot outcompete infinite exploit value at scale. Watchdog markets and replay bounties are the direction.</p>
+        <p style="font-size:12px;color:var(--dim);line-height:1.75;margin-bottom:10px"><strong style="color:var(--ink)">Prover collusion</strong> is operationally mitigated by SpotChecker. Not cryptographically eliminated.</p>
+        <p style="font-size:12px;color:var(--dim);line-height:1.75"><strong style="color:var(--ink)">Spec completeness</strong> is a protocol governance decision. Under-specified = under-covered. Nothing implied.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="full-divider"></div>
+
+<!-- Narrative -->
+<div class="narrative">
+  <div class="narrative-inner">
+    <h2 class="narrative-title">
+      Audits ask: was the code good<br>
+      <em>at deployment?</em><br><br>
+      IVP asks: are the security<br>
+      assumptions still true <em>right now?</em>
+    </h2>
+
+    <div class="narrative-rule"></div>
+
+    <p class="narrative-body">
+      That's an enormous conceptual difference. An audit is a snapshot. The protocol ships, upgrades, adds collateral types, integrates new bridges, composes with other protocols. <strong>The snapshot doesn't follow it.</strong>
+    </p>
+
+    <p class="narrative-body">
+      IVP does. Not by monitoring — by verifying. Every epoch, a ZK prover checks whether the specified properties still hold against live state. A property breaks, the proof is on-chain, Guardian fires. The attacker's drain gets intercepted before completion.
+    </p>
+
+    <p class="narrative-body">
+      <strong>What protocols actually buy:</strong> five critical invariants and freeze capability for catastrophic state divergence. Accounting conservation. Solvency. Collateralization. Bridge escrow integrity. Share/debt parity. Real pain points. Real exploit classes.
+    </p>
+
+    <div class="narrative-rule"></div>
+
+    <p class="narrative-body" style="font-size:13px">
+      We are not optimizing for noise. Security researchers, audit firms, and protocol engineers — this is built for you. The capital arrives after the credibility.
+    </p>
+  </div>
+</div>
+
+<!-- Status -->
+<section class="section" id="status">
+  <div class="section-label">Where we are</div>
+
+  <div class="status-grid">
+    <div>
+      <ul class="status-list">
+        <li class="status-item">
+          <div class="status-check done">✓</div>
+          <span class="status-text">ISL compiler and constraint evaluator built</span>
+        </li>
+        <li class="status-item">
+          <div class="status-check done">✓</div>
+          <span class="status-text">SP1 zkVM prover operational</span>
+        </li>
+        <li class="status-item">
+          <div class="status-check done">✓</div>
+          <span class="status-text">ZK circuit verified</span>
+        </li>
+        <li class="status-item">
+          <div class="status-check done">✓</div>
+          <span class="status-text">36 invariants — 5 categories, 3 exploit classes encoded</span>
+        </li>
+        <li class="status-item">
+          <div class="status-check done">✓</div>
+          <span class="status-text">Active bug bounty submissions across multiple protocols</span>
+        </li>
+        <li class="status-item">
+          <div class="status-check done">✓</div>
+          <span class="status-text">6 contracts — hardened, adversary-designed</span>
+        </li>
+        <li class="status-item">
+          <div class="status-check done">✓</div>
+          <span class="status-text">SpotChecker — collusion cost amplification</span>
+        </li>
+        <li class="status-item">
+          <div class="status-check done">✓</div>
+          <span class="status-text">SDK + CLI built</span>
+        </li>
+        <li class="status-item">
+          <div class="status-check done">✓</div>
+          <span class="status-text">Invariant Protocol LLC — EIN 42-2616040</span>
+        </li>
+        <li class="status-item">
+          <div class="status-check todo"></div>
+          <span class="status-text todo">Testnet deploy</span>
+        </li>
+        <li class="status-item">
+          <div class="status-check todo"></div>
+          <span class="status-text todo">First protocol integration</span>
+        </li>
+        <li class="status-item">
+          <div class="status-check todo"></div>
+          <span class="status-text todo">Raise</span>
+        </li>
+      </ul>
+    </div>
+
+    <div class="open-problems fade-up">
+      <div class="open-problems-title">The intersection we occupy</div>
+      <div class="problem">
+        <div class="problem-title">Formal verification</div>
+        <p class="problem-body">ISL compiles to typed constraint expressions evaluated inside a ZK circuit. Specs are Merkle-committed on-chain. Every constraint has an inclusion proof. The language is the standard.</p>
+      </div>
+      <div class="problem">
+        <div class="problem-title">Proof systems</div>
+        <p class="problem-body">SP1 zkVM. RISC-V circuit. Recursive batch aggregation. State commitments. Counter-proof disputes. ZK is the enforcement mechanism, not the feature.</p>
+      </div>
+      <div class="problem">
+        <div class="problem-title">On-chain risk</div>
+        <p class="problem-body">Tranched coverage vaults. Epoch-locked liquidity. Senior/junior hierarchy. Pro-rata settlement. The risk layer DeFi actually needed.</p>
+      </div>
+      <div class="problem">
+        <div class="problem-title">AI-assisted auditing</div>
+        <p class="problem-body">ISL specs are machine-readable. Exploit classes are formally encoded. The library compounds — every new finding becomes a constraint that monitors every protocol in that category.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="full-divider"></div>
+
+<!-- Footer -->
+<footer>
+  <div class="footer-left">Invariant Protocol</div>
+  <div class="footer-center">Security researchers, audit firms, protocol teams — reach out.</div>
+  <div class="footer-right">BUSL-1.1 · EIN 42-2616040</div>
+</footer>
+
+<script>
+// Intersection observer for fade-up animations
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+document.querySelectorAll('.fade-up').forEach((el, i) => {
+  el.style.transitionDelay = `${(i % 4) * 0.08}s`;
+  observer.observe(el);
+});
+</script>
+</body>
+</html>

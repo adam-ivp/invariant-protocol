@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IVP Coverage — Pricing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink:     #08090B;
+  --paper:   #F2EFE8;
+  --warm:    #E8E4DC;
+  --border:  #C8C4BC;
+  --dim:     #8C8880;
+  --muted:   #C0BDB8;
+  --accent:  #08090B;
+  --red:     #B83030;
+  --green:   #1A6B3C;
+  --mono:    'IBM Plex Mono', monospace;
+  --display: 'Bebas Neue', sans-serif;
+  --serif:   'Instrument Serif', Georgia, serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* ── Grain overlay ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ── Nav ── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  padding: 0 40px;
+  height: 52px;
+  background: var(--paper);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-logo {
+  font-family: var(--display);
+  font-size: 20px;
+  letter-spacing: 0.08em;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.nav-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.nav-link {
+  font-size: 11px;
+  color: var(--dim);
+  text-decoration: none;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: color 0.15s;
+}
+
+.nav-link:hover { color: var(--ink); }
+
+/* ── Hero ── */
+.hero {
+  padding: 140px 40px 80px;
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: end;
+  border-bottom: 1px solid var(--border);
+}
+
+.hero-left {}
+
+.hero-tag {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hero-tag::before {
+  content: '';
+  width: 28px;
+  height: 1px;
+  background: var(--dim);
+}
+
+.hero-headline {
+  font-family: var(--display);
+  font-size: clamp(64px, 8vw, 120px);
+  line-height: 0.92;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  margin-bottom: 32px;
+}
+
+.hero-sub {
+  font-family: var(--serif);
+  font-size: 18px;
+  color: var(--dim);
+  line-height: 1.5;
+  font-style: italic;
+  max-width: 380px;
+}
+
+.hero-right {
+  padding-bottom: 8px;
+}
+
+.hero-stat-row {
+  display: flex;
+  gap: 0;
+  border-top: 1px solid var(--border);
+}
+
+.hero-stat {
+  flex: 1;
+  padding: 20px 0;
+  border-right: 1px solid var(--border);
+  padding-right: 20px;
+  padding-left: 20px;
+}
+
+.hero-stat:first-child { padding-left: 0; }
+.hero-stat:last-child { border-right: none; }
+
+.hs-num {
+  font-family: var(--display);
+  font-size: 40px;
+  color: var(--ink);
+  letter-spacing: 0.04em;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.hs-label {
+  font-size: 10px;
+  color: var(--dim);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1.4;
+}
+
+.hero-note {
+  margin-top: 20px;
+  padding: 14px 16px;
+  background: var(--warm);
+  border: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--dim);
+  line-height: 1.7;
+}
+
+.hero-note strong { color: var(--ink); }
+
+/* ── Section ── */
+.section {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 60px 40px;
+}
+
+.section-label {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin-bottom: 48px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.section-label::before {
+  content: '';
+  width: 24px;
+  height: 1px;
+  background: var(--dim);
+}
+
+/* ── Pricing grid ── */
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0;
+  border: 1px solid var(--border);
+}
+
+.tier {
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: background 0.2s;
+}
+
+.tier:last-child { border-right: none; }
+
+.tier.featured {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.tier-head {
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tier.featured .tier-head { border-bottom-color: rgba(255,255,255,0.1); }
+
+.tier-name {
+  font-family: var(--display);
+  font-size: 22px;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+}
+
+.tier.featured .tier-name { color: var(--paper); }
+
+.tier-tvl {
+  font-size: 10px;
+  color: var(--dim);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tier.featured .tier-tvl { color: rgba(242,239,232,0.5); }
+
+.tier-price {
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tier.featured .tier-price { border-bottom-color: rgba(255,255,255,0.1); }
+
+.price-amount {
+  font-family: var(--display);
+  font-size: 36px;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  line-height: 1;
+  margin-bottom: 3px;
+}
+
+.tier.featured .price-amount { color: var(--paper); }
+
+.price-period {
+  font-size: 10px;
+  color: var(--dim);
+  letter-spacing: 0.08em;
+}
+
+.tier.featured .price-period { color: rgba(242,239,232,0.5); }
+
+.price-annual {
+  font-size: 10px;
+  color: var(--green);
+  margin-top: 4px;
+  letter-spacing: 0.04em;
+}
+
+.tier.featured .price-annual { color: #4AE88A; }
+
+.tier-features {
+  padding: 16px 20px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+.tier.featured .feature { color: rgba(242,239,232,0.85); }
+
+.feature-check {
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  background: var(--warm);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--green);
+}
+
+.tier.featured .feature-check {
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.2);
+  color: #4AE88A;
+}
+
+.feature-x {
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  background: var(--warm);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--muted);
+}
+
+.tier-cta {
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+}
+
+.tier.featured .tier-cta { border-top-color: rgba(255,255,255,0.1); }
+
+.cta-btn {
+  display: block;
+  width: 100%;
+  padding: 9px 0;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s;
+}
+
+.cta-outline {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--dim);
+}
+
+.cta-outline:hover { border-color: var(--ink); color: var(--ink); }
+
+.cta-solid {
+  background: var(--paper);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.cta-solid:hover { background: var(--warm); }
+
+.cta-ghost {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.2);
+  color: rgba(242,239,232,0.6);
+  font-size: 10px;
+}
+
+.cta-ghost:hover { border-color: rgba(255,255,255,0.4); color: var(--paper); }
+
+.featured-badge {
+  position: absolute;
+  top: -1px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--red);
+  color: white;
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  white-space: nowrap;
+}
+
+/* ── Annual toggle ── */
+.billing-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 32px;
+  font-size: 11px;
+  color: var(--dim);
+}
+
+.toggle-track {
+  width: 36px;
+  height: 20px;
+  background: var(--border);
+  border-radius: 10px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.toggle-track.on { background: var(--ink); }
+
+.toggle-thumb {
+  width: 14px;
+  height: 14px;
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  transition: left 0.2s;
+}
+
+.toggle-track.on .toggle-thumb { left: 19px; }
+
+.toggle-label.active { color: var(--ink); font-weight: 500; }
+
+.save-badge {
+  background: var(--green);
+  color: white;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  padding: 2px 7px;
+  border-radius: 2px;
+}
+
+/* ── What's included ── */
+.included-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  border: 1px solid var(--border);
+  margin-bottom: 1px;
+}
+
+.included-item {
+  padding: 24px 24px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.included-item:nth-child(3n) { border-right: none; }
+.included-item:nth-last-child(-n+3) { border-bottom: none; }
+
+.ii-num {
+  font-family: var(--display);
+  font-size: 32px;
+  letter-spacing: 0.06em;
+  color: var(--border);
+  line-height: 1;
+  margin-bottom: 12px;
+}
+
+.ii-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink);
+  margin-bottom: 6px;
+  letter-spacing: 0.04em;
+}
+
+.ii-desc {
+  font-size: 11px;
+  color: var(--dim);
+  line-height: 1.7;
+}
+
+/* ── FAQ / Honest section ── */
+.honest-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border: 1px solid var(--border);
+}
+
+.honest-item {
+  padding: 24px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.honest-item:nth-child(2n) { border-right: none; }
+.honest-item:nth-last-child(-n+2) { border-bottom: none; }
+
+.honest-q {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink);
+  margin-bottom: 8px;
+  letter-spacing: 0.02em;
+}
+
+.honest-a {
+  font-size: 11px;
+  color: var(--dim);
+  line-height: 1.75;
+}
+
+.honest-a strong { color: var(--ink); font-weight: 500; }
+
+/* ── CTA strip ── */
+.cta-strip {
+  background: var(--ink);
+  color: var(--paper);
+  padding: 60px 40px;
+}
+
+.cta-strip-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 40px;
+  align-items: center;
+}
+
+.cta-strip-title {
+  font-family: var(--display);
+  font-size: clamp(32px, 4vw, 56px);
+  letter-spacing: 0.06em;
+  line-height: 1;
+  margin-bottom: 10px;
+}
+
+.cta-strip-sub {
+  font-size: 13px;
+  color: rgba(242,239,232,0.5);
+  line-height: 1.6;
+}
+
+.cta-strip-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 200px;
+}
+
+.btn-white {
+  background: var(--paper);
+  color: var(--ink);
+  padding: 12px 24px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  text-align: center;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.btn-white:hover { opacity: 0.9; }
+
+.btn-outline-white {
+  background: transparent;
+  border: 1px solid rgba(242,239,232,0.25);
+  color: rgba(242,239,232,0.6);
+  padding: 11px 24px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-outline-white:hover {
+  border-color: rgba(242,239,232,0.5);
+  color: var(--paper);
+}
+
+/* ── Footer ── */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 28px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.footer-logo {
+  font-family: var(--display);
+  font-size: 16px;
+  letter-spacing: 0.08em;
+}
+
+.footer-note {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+}
+
+/* ── Animations ── */
+.fade-in {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.fade-in.visible { opacity: 1; transform: translateY(0); }
+
+/* ── Responsive ── */
+@media (max-width: 1000px) {
+  .pricing-grid { grid-template-columns: 1fr 1fr; }
+  .tier:nth-child(2) { border-right: none; }
+  .tier:nth-child(3) { border-top: 1px solid var(--border); }
+  .hero { grid-template-columns: 1fr; gap: 32px; }
+  .included-grid { grid-template-columns: 1fr 1fr; }
+  .honest-grid { grid-template-columns: 1fr; }
+  .honest-item:nth-child(2n) { border-right: 1px solid var(--border); }
+  .honest-item { border-right: none !important; }
+  .cta-strip-inner { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="#" class="nav-logo">IVP</a>
+  <div class="nav-right">
+    <a href="#" class="nav-link">Docs</a>
+    <a href="https://github.com/adam-ivp/invariant-protocol" class="nav-link">GitHub</a>
+    <a href="mailto:invariantprotocol@pm.me" class="nav-link">Contact</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-left fade-in">
+    <div class="hero-tag">Coverage pricing</div>
+    <h1 class="hero-headline">INVARIANT<br>COVERAGE</h1>
+    <p class="hero-sub">
+      Priced by TVL. Because a billion-dollar protocol gets a billion-dollar risk profile.
+    </p>
+  </div>
+  <div class="hero-right fade-in" style="transition-delay:.1s">
+    <div class="hero-stat-row">
+      <div class="hero-stat">
+        <div class="hs-num">36</div>
+        <div class="hs-label">Invariants in<br>library</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hs-num">5</div>
+        <div class="hs-label">Exploit classes<br>encoded</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hs-num">8</div>
+        <div class="hs-label">Contracts<br>deployed</div>
+      </div>
+    </div>
+    <div class="hero-note">
+      <strong>First integration at each tier is free for 90 days.</strong><br>
+      We need the case study more than the revenue. One credible protocol using IVP in production is worth more than three months of fees.
+    </div>
+  </div>
+</section>
+
+<!-- Pricing -->
+<section class="section">
+  <div class="section-label">Coverage tiers</div>
+
+  <div class="billing-toggle" id="billingToggle">
+    <span class="toggle-label active" id="monthlyLabel">Monthly</span>
+    <div class="toggle-track" id="toggleTrack" onclick="toggleBilling()">
+      <div class="toggle-thumb"></div>
+    </div>
+    <span class="toggle-label" id="annualLabel">Annual</span>
+    <span class="save-badge">Save 20%</span>
+  </div>
+
+  <div class="pricing-grid fade-in" style="transition-delay:.15s">
+
+    <!-- Seed -->
+    <div class="tier">
+      <div class="tier-head">
+        <div class="tier-name">SEED</div>
+        <div class="tier-tvl">Under $10M TVL</div>
+      </div>
+      <div class="tier-price">
+        <div class="price-amount" data-monthly="$1,500" data-annual="$1,200">$1,500</div>
+        <div class="price-period">per month</div>
+        <div class="price-annual" id="seed-annual" style="display:none">$14,400/yr · 2 months free</div>
+      </div>
+      <div class="tier-features">
+        <div class="feature"><div class="feature-check">✓</div>3 invariants from library</div>
+        <div class="feature"><div class="feature-check">✓</div>Epoch-by-epoch verification</div>
+        <div class="feature"><div class="feature-check">✓</div>Alert-only Guardian</div>
+        <div class="feature"><div class="feature-check">✓</div>Violation proof on-chain</div>
+        <div class="feature"><div class="feature-x">—</div>Account freeze</div>
+        <div class="feature"><div class="feature-x">—</div>Withdrawal pause</div>
+        <div class="feature"><div class="feature-x">—</div>Escrow redirect</div>
+        <div class="feature"><div class="feature-x">—</div>Custom invariants</div>
+        <div class="feature"><div class="feature-x">—</div>SLA</div>
+      </div>
+      <div class="tier-cta">
+        <a href="mailto:invariantprotocol@pm.me" class="cta-btn cta-outline">Get started</a>
+      </div>
+    </div>
+
+    <!-- Growth -->
+    <div class="tier">
+      <div class="tier-head">
+        <div class="tier-name">GROWTH</div>
+        <div class="tier-tvl">$10M – $100M TVL</div>
+      </div>
+      <div class="tier-price">
+        <div class="price-amount" data-monthly="$8,000" data-annual="$6,400">$8,000</div>
+        <div class="price-period">per month</div>
+        <div class="price-annual" id="growth-annual" style="display:none">$76,800/yr · 2 months free</div>
+      </div>
+      <div class="tier-features">
+        <div class="feature"><div class="feature-check">✓</div>5 invariants from library</div>
+        <div class="feature"><div class="feature-check">✓</div>Epoch-by-epoch verification</div>
+        <div class="feature"><div class="feature-check">✓</div>Full Guardian callbacks</div>
+        <div class="feature"><div class="feature-check">✓</div>Account freeze</div>
+        <div class="feature"><div class="feature-check">✓</div>Withdrawal pause</div>
+        <div class="feature"><div class="feature-check">✓</div>Violation proof on-chain</div>
+        <div class="feature"><div class="feature-x">—</div>Escrow redirect</div>
+        <div class="feature"><div class="feature-x">—</div>Custom invariants</div>
+        <div class="feature"><div class="feature-x">—</div>SLA</div>
+      </div>
+      <div class="tier-cta">
+        <a href="mailto:invariantprotocol@pm.me" class="cta-btn cta-outline">Get started</a>
+      </div>
+    </div>
+
+    <!-- Scale — FEATURED -->
+    <div class="tier featured">
+      <div class="featured-badge">Most popular</div>
+      <div class="tier-head">
+        <div class="tier-name">SCALE</div>
+        <div class="tier-tvl">$100M – $500M TVL</div>
+      </div>
+      <div class="tier-price">
+        <div class="price-amount" data-monthly="$25,000" data-annual="$20,000">$25,000</div>
+        <div class="price-period">per month</div>
+        <div class="price-annual" id="scale-annual" style="display:none">$240,000/yr · 2 months free</div>
+      </div>
+      <div class="tier-features">
+        <div class="feature"><div class="feature-check">✓</div>10 invariants from library</div>
+        <div class="feature"><div class="feature-check">✓</div>Epoch-by-epoch verification</div>
+        <div class="feature"><div class="feature-check">✓</div>Full Guardian callbacks</div>
+        <div class="feature"><div class="feature-check">✓</div>Account freeze</div>
+        <div class="feature"><div class="feature-check">✓</div>Withdrawal pause</div>
+        <div class="feature"><div class="feature-check">✓</div>Escrow redirect</div>
+        <div class="feature"><div class="feature-check">✓</div>Violation proof on-chain</div>
+        <div class="feature"><div class="feature-check">✓</div>1 custom invariant/quarter</div>
+        <div class="feature"><div class="feature-x">—</div>SLA</div>
+      </div>
+      <div class="tier-cta">
+        <a href="mailto:invariantprotocol@pm.me" class="cta-btn cta-solid">Get started</a>
+      </div>
+    </div>
+
+    <!-- Institutional -->
+    <div class="tier">
+      <div class="tier-head">
+        <div class="tier-name">INSTITUTION</div>
+        <div class="tier-tvl">$500M – $2B TVL</div>
+      </div>
+      <div class="tier-price">
+        <div class="price-amount" data-monthly="$75,000" data-annual="$60,000">$75,000</div>
+        <div class="price-period">per month</div>
+        <div class="price-annual" id="inst-annual" style="display:none">$720,000/yr · 2 months free</div>
+      </div>
+      <div class="tier-features">
+        <div class="feature"><div class="feature-check">✓</div>Unlimited invariants</div>
+        <div class="feature"><div class="feature-check">✓</div>Epoch-by-epoch verification</div>
+        <div class="feature"><div class="feature-check">✓</div>Full Guardian callbacks</div>
+        <div class="feature"><div class="feature-check">✓</div>Account freeze</div>
+        <div class="feature"><div class="feature-check">✓</div>Withdrawal pause</div>
+        <div class="feature"><div class="feature-check">✓</div>Escrow redirect</div>
+        <div class="feature"><div class="feature-check">✓</div>Custom invariants included</div>
+        <div class="feature"><div class="feature-check">✓</div>99.5% uptime SLA</div>
+        <div class="feature"><div class="feature-x">—</div>Dedicated prover</div>
+      </div>
+      <div class="tier-cta">
+        <a href="mailto:invariantprotocol@pm.me" class="cta-btn cta-outline">Get started</a>
+      </div>
+    </div>
+
+    <!-- Enterprise -->
+    <div class="tier">
+      <div class="tier-head">
+        <div class="tier-name">ENTERPRISE</div>
+        <div class="tier-tvl">$2B+ TVL</div>
+      </div>
+      <div class="tier-price">
+        <div class="price-amount">Custom</div>
+        <div class="price-period">contact us</div>
+      </div>
+      <div class="tier-features">
+        <div class="feature"><div class="feature-check">✓</div>Unlimited invariants</div>
+        <div class="feature"><div class="feature-check">✓</div>Epoch-by-epoch verification</div>
+        <div class="feature"><div class="feature-check">✓</div>Full Guardian callbacks</div>
+        <div class="feature"><div class="feature-check">✓</div>Account freeze</div>
+        <div class="feature"><div class="feature-check">✓</div>Withdrawal pause</div>
+        <div class="feature"><div class="feature-check">✓</div>Escrow redirect</div>
+        <div class="feature"><div class="feature-check">✓</div>Dedicated prover node</div>
+        <div class="feature"><div class="feature-check">✓</div>Custom SLA</div>
+        <div class="feature"><div class="feature-check">✓</div>White-glove onboarding</div>
+      </div>
+      <div class="tier-cta">
+        <a href="mailto:invariantprotocol@pm.me" class="cta-btn cta-outline">Contact us</a>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<div style="height:1px;background:var(--border);max-width:1200px;margin:0 auto"></div>
+
+<!-- What's included -->
+<section class="section">
+  <div class="section-label">What every tier includes</div>
+  <div class="included-grid fade-in">
+    <div class="included-item">
+      <div class="ii-num">01</div>
+      <div class="ii-title">ISL invariant library access</div>
+      <div class="ii-desc">36 formally specified invariants across lending, bridge, stablecoin, DEX, and governance. Every entry grounded in a real exploit class.</div>
+    </div>
+    <div class="included-item">
+      <div class="ii-num">02</div>
+      <div class="ii-title">On-chain proof per epoch</div>
+      <div class="ii-desc">Every violation produces a ZK proof committed on-chain. Permanent record. Provable. Auditable by anyone. Not an alert — a proof.</div>
+    </div>
+    <div class="included-item">
+      <div class="ii-num">03</div>
+      <div class="ii-title">Coverage vault access</div>
+      <div class="ii-desc">Fund a CoverageVault. Protocol or LPs provide liquidity. Claims settle automatically when proofs finalize. No committee.</div>
+    </div>
+    <div class="included-item">
+      <div class="ii-num">04</div>
+      <div class="ii-title">SpotChecker protection</div>
+      <div class="ii-desc">10% of epochs get a secret second prover. Cryptographic collusion resistance. Prover cannot predict check epochs. Cannot bribe a checker they cannot identify.</div>
+    </div>
+    <div class="included-item">
+      <div class="ii-num">05</div>
+      <div class="ii-title">SDK + CLI</div>
+      <div class="ii-desc">TypeScript SDK and CLI for registration, monitoring, and vault management. Three lines to integrate. One command to watch for violations.</div>
+    </div>
+    <div class="included-item">
+      <div class="ii-num">06</div>
+      <div class="ii-title">False positive protection</div>
+      <div class="ii-desc">Dispute mechanism with bonded counter-proofs. Guardian automatically unpauses via onViolationCleared() when a dispute succeeds. No permanent freeze from a bad invariant.</div>
+    </div>
+  </div>
+</section>
+
+<div style="height:1px;background:var(--border);max-width:1200px;margin:0 auto"></div>
+
+<!-- Honest section -->
+<section class="section">
+  <div class="section-label">Honest answers</div>
+  <div class="honest-grid fade-in">
+    <div class="honest-item">
+      <div class="honest-q">Does IVP prevent exploits?</div>
+      <div class="honest-a">No. Exploit transactions execute — the EVM is permissionless. <strong>IVP intercepts the drain phase.</strong> Most large exploits require multiple transactions. Guardian fires between the violation and the completed drain — reducing blast radius, not guaranteeing prevention.</div>
+    </div>
+    <div class="honest-item">
+      <div class="honest-q">Is IVP production-ready?</div>
+      <div class="honest-a">The invariant language, Guardian interface, and contract suite are built and security-patched. <strong>SP1 verifier integration is in progress.</strong> We are pre-testnet. We do not claim production readiness. Early integrators get 90 days free and direct access to the team.</div>
+    </div>
+    <div class="honest-item">
+      <div class="honest-q">Who controls the escrow?</div>
+      <div class="honest-a">The protocol's admin — not IVP. IVP provides the infrastructure. Protocols define their own release policy. <strong>IVP cannot unilaterally move funds.</strong> False positives are resolved via the dispute mechanism and returned automatically.</div>
+    </div>
+    <div class="honest-item">
+      <div class="honest-q">What if the invariant is wrong?</div>
+      <div class="honest-a">Disputes are bonded. Anyone can submit a counter-proof. If valid, the prover is slashed and Guardian fires onViolationCleared() — automatically unfreezing. <strong>Spec completeness is the protocol team's responsibility.</strong> IVP enforces what is committed.</div>
+    </div>
+    <div class="honest-item">
+      <div class="honest-q">Can provers collude with protocols?</div>
+      <div class="honest-a">It's economically mitigated, not cryptographically eliminated. The SpotChecker makes it operationally expensive: rotating private seed, commit-before-reveal, hidden checker identity. <strong>A prover cannot collude with someone they cannot identify.</strong> See specs/spot-checker-cryptography.md.</div>
+    </div>
+    <div class="honest-item">
+      <div class="honest-q">What are custom invariants?</div>
+      <div class="honest-a">Protocol-specific ISL specs written by the IVP team. Your protocol's exact security assumptions — storage layout, eMode mechanics, bridge architecture — encoded as formally verifiable constraints. <strong>This is where the bug bounty background is a direct product.</strong> We find the classes. We encode them.</div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA strip -->
+<div class="cta-strip">
+  <div class="cta-strip-inner">
+    <div>
+      <div class="cta-strip-title">START WITH<br>THE DEMO</div>
+      <div class="cta-strip-sub">One vulnerable bridge. One invariant. One Guardian freeze.<br>Runnable in under 5 minutes with Foundry.</div>
+    </div>
+    <div class="cta-strip-actions">
+      <a href="https://github.com/adam-ivp/invariant-protocol" class="btn-white">View on GitHub →</a>
+      <a href="mailto:invariantprotocol@pm.me" class="btn-outline-white">Talk to us</a>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-logo">INVARIANT PROTOCOL</div>
+  <div class="footer-note">BUSL-1.1 · EIN 42-2616040 · invariantprotocol.xyz</div>
+</footer>
+
+<script>
+let isAnnual = false;
+
+function toggleBilling() {
+  isAnnual = !isAnnual;
+  const track = document.getElementById('toggleTrack');
+  const mLabel = document.getElementById('monthlyLabel');
+  const aLabel = document.getElementById('annualLabel');
+
+  track.classList.toggle('on', isAnnual);
+  mLabel.classList.toggle('active', !isAnnual);
+  aLabel.classList.toggle('active', isAnnual);
+
+  // Update prices
+  document.querySelectorAll('.price-amount[data-monthly]').forEach(el => {
+    el.textContent = isAnnual ? el.dataset.annual : el.dataset.monthly;
+  });
+
+  // Show/hide annual savings
+  ['seed','growth','scale','inst'].forEach(id => {
+    const el = document.getElementById(`${id}-annual`);
+    if (el) el.style.display = isAnnual ? 'block' : 'none';
+  });
+}
+
+// Intersection observer for animations
+const obs = new IntersectionObserver(entries => {
+  entries.forEach((e, i) => {
+    if (e.isIntersecting) {
+      setTimeout(() => e.target.classList.add('visible'), i * 60);
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>
