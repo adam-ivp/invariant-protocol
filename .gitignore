@@ -3,3 +3,4 @@ ivp-prover/
 node_modules/
 .env
 *.key
+invariant-library/
